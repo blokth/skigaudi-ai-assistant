@@ -20,7 +20,7 @@ type FAQ = {
 };
 
 export default function AdminFAQ() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [faqs, setFaqs] = useState<FAQ[]>([]);
@@ -29,10 +29,14 @@ export default function AdminFAQ() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // redirect unauthenticated users
+  // redirect unauthenticated or unauthorized users
   useEffect(() => {
-    if (!authLoading && !user) router.replace("/login");
-  }, [authLoading, user, router]);
+    if (!authLoading && !user) {
+      router.replace("/login");
+    } else if (!authLoading && user && !isAdmin) {
+      router.replace("/");
+    }
+  }, [authLoading, user, isAdmin, router]);
 
   // load faqs
   const loadFaqs = async () => {
@@ -77,7 +81,7 @@ export default function AdminFAQ() {
     setSaving(false);
   };
 
-  if (authLoading || !user) {
+  if (authLoading || !user || !isAdmin) {
     return (
       <main className="min-h-screen flex items-center justify-center">
         Loading…
