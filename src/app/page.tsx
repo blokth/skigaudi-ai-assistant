@@ -7,7 +7,7 @@ import {
   PartyPopper,
   Users,
   Music2,
-  SkiingNordic,
+  CableCar,
 } from "lucide-react";
 
 export default function Landing() {
@@ -39,7 +39,7 @@ export default function Landing() {
         {/* HIGHLIGHTS */}
         <ul className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-sm md:text-base font-medium">
           <li className="flex flex-col items-center gap-1">
-            <SkiingNordic className="w-6 h-6" />
+            <CableCar className="w-6 h-6" />
             4&nbsp;Days Skiing
           </li>
           <li className="flex flex-col items-center gap-1">
