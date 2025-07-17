@@ -9,6 +9,8 @@ firebase-debug.*.log*
 
 .next/
 
+src/firebase/functions/.genkit/
+
 # Firebase cache
 .firebase/
 
