@@ -20,6 +20,13 @@ export default function Landing() {
 
   return (
     <main className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-sky-200 via-violet-200 to-fuchsia-200 text-gray-900">
+      {/* ADMIN – top-right */}
+      <button
+        onClick={() => router.push("/login")}
+        className="absolute top-6 right-6 md:top-8 md:right-8 px-4 py-2 text-sm font-semibold border border-gray-800 dark:border-white rounded-md bg-white/70 backdrop-blur-md hover:bg-white transition text-gray-800 dark:text-white"
+      >
+        Admin login
+      </button>
       {/* halftone dots */}
       <div
         className="absolute inset-0 pointer-events-none opacity-40"
@@ -65,28 +72,13 @@ export default function Landing() {
           </li>
         </ul>
 
-        {/* AUTH CARD */}
-        <section className="backdrop-blur-lg bg-white/70 dark:bg-black/70 rounded-xl p-8 w-full max-w-sm shadow-xl space-y-6 text-gray-900 dark:text-white">
-          <button
-            onClick={anonLogin}
-            className="w-full py-3 rounded-lg bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-300 transition"
-          >
-            Join anonymously
-          </button>
-
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide">
-            <span className="flex-1 h-px bg-white/30" />
-            or
-            <span className="flex-1 h-px bg-white/30" />
-          </div>
-
-          <button
-            onClick={() => router.push("/login")}
-            className="w-full py-3 rounded-lg border border-gray-800 dark:border-white text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition font-semibold"
-          >
-            Admin login
-          </button>
-        </section>
+        {/* WELCOME BUTTON */}
+        <button
+          onClick={anonLogin}
+          className="px-10 py-4 rounded-lg bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-300 transition shadow-lg"
+        >
+          Welcome
+        </button>
       </div>
     </main>
   );
