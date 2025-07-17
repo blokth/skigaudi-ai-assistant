@@ -28,9 +28,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       onAuthStateChanged(auth, async u => {
         setUser(u);
 
-        if (u) {
-          const token = await u.getIdTokenResult();
-          setIsAdmin(!!token.claims.admin);
+        if (u && !u.isAnonymous) {
+          // any signed-in (non-anonymous) user is considered an admin
+          setIsAdmin(true);
         } else {
           setIsAdmin(false);
         }
