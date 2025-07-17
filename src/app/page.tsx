@@ -66,15 +66,15 @@ export default function Landing() {
         </ul>
 
         {/* AUTH CARD */}
-        <section className="backdrop-blur-md bg-white/10 rounded-xl p-8 w-full max-w-sm shadow-lg space-y-6">
+        <section className="backdrop-blur-lg bg-white/70 dark:bg-black/70 rounded-xl p-8 w-full max-w-sm shadow-xl space-y-6 text-gray-900 dark:text-white">
           <button
             onClick={anonLogin}
-            className="w-full py-3 rounded-lg bg-yellow-300 text-black font-semibold hover:opacity-90 transition"
+            className="w-full py-3 rounded-lg bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-300 transition"
           >
             Join anonymously
           </button>
 
-          <div className="flex items-center gap-2 text-white/70 text-xs uppercase tracking-wide">
+          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 text-xs uppercase tracking-wide">
             <span className="flex-1 h-px bg-white/30" />
             or
             <span className="flex-1 h-px bg-white/30" />
@@ -82,7 +82,7 @@ export default function Landing() {
 
           <button
             onClick={() => router.push("/login")}
-            className="w-full py-3 rounded-lg border border-white/40 hover:bg-white/10 transition font-semibold"
+            className="w-full py-3 rounded-lg border border-gray-800 dark:border-white text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition font-semibold"
           >
             Admin login
           </button>
