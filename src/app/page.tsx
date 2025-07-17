@@ -19,15 +19,24 @@ export default function Landing() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-sky-400 via-violet-500 to-fuchsia-600 text-white">
+    <main className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-sky-200 via-violet-200 to-fuchsia-200 text-gray-900">
+      {/* halftone dots */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgba(255,255,255,.35) 1.5px, transparent 1.5px)",
+          backgroundSize: "18px 18px",
+        }}
+      />
       {/* subtle animated blobs */}
-      <div className="absolute -left-44 -top-32 w-[36rem] h-[36rem] bg-fuchsia-400/30 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute -right-52 -bottom-40 w-[36rem] h-[36rem] bg-sky-400/30 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute -left-44 -top-32 w-[36rem] h-[36rem] bg-fuchsia-300/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute -right-52 -bottom-40 w-[36rem] h-[36rem] bg-sky-300/20 rounded-full blur-3xl animate-pulse" />
 
       <div className="relative z-10 flex flex-col items-center gap-14 px-6">
         {/* HERO */}
         <header className="text-center space-y-4">
-          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
+          <h1 className="text-6xl md:text-8xl font-extrabold tracking-tight">
             <span className="text-yellow-300">Ski</span>Gaudi
           </h1>
           <p className="max-w-xl mx-auto text-lg md:text-xl font-medium">
