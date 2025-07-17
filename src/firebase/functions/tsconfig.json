@@ -1,7 +1,7 @@
 {
   "compileOnSave": true,
   "include": [
-    "src"
+    "."
   ],
   "compilerOptions": {
     "module": "NodeNext",
