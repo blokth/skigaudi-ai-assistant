@@ -94,7 +94,7 @@ const faqChatFlow = ai.defineFlow(
     const docs = await ai.retrieve({
       retriever: faqRetriever,
       query: question,
-      options: { limit: 5 },
+      options: { k: 5 },   // number of nearest FAQs to return
     });
 
     // 2. assemble context block for RAG
