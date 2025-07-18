@@ -1,23 +1,23 @@
-import "dotenv/config";
-import * as admin from "firebase-admin";
-import { FieldValue, getFirestore } from "firebase-admin/firestore";
-import { ai } from "../genkit/flows";
-import { textembeddingGecko } from "@genkit-ai/vertexai";
-
-admin.initializeApp();
-const db = getFirestore();
+import { textEmbeddingGecko003 } from "@genkit-ai/vertexai";
+import { FieldValue } from "firebase-admin/firestore";
+import { ai } from "../src/firebase/functions/genkit/flows";
+import { getFirestore } from "firebase-admin/firestore";
 
 (async () => {
+  const db = getFirestore();
   const snap = await db.collection("faqs").get();
-  for (const d of snap.docs) {
-    const data = d.data();
-    if (Array.isArray(data.embedding)) {            // old style → re-write
-      const { embedding } = await ai.embed({
-        model: textembeddingGecko,
-        text: `${data.question}\n${data.answer}`,
-      });
-      await d.ref.update({ embedding: FieldValue.vector(embedding) });
-      console.log("fixed", d.id);
-    }
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    if (!data.question || !data.answer) continue;
+
+    const embedding =
+      (await ai.embed({
+        embedder: textEmbeddingGecko003,
+        content: `${data.question}\n${data.answer}`,
+      }))[0].embedding;
+
+    await doc.ref.update({
+      embedding: FieldValue.vector(embedding),
+    });
   }
 })();
