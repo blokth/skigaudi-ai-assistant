@@ -7,7 +7,14 @@ import {
 
 // Vector search isn’t implemented in the Firestore emulator.
 // Force this process to talk to production so the retriever works.
-if (process.env.FIRESTORE_EMULATOR_HOST) {
+const USE_LOCAL_VECTORSTORE =
+  process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true" ||
+  !!process.env.FIRESTORE_EMULATOR_HOST;
+
+// Vector search isn’t implemented in the Firestore emulator.
+// If we're *not* using the local vector store, fall back to production
+// Firestore so the retriever continues to work.
+if (!USE_LOCAL_VECTORSTORE && process.env.FIRESTORE_EMULATOR_HOST) {
   console.warn(
     "Vector search not supported in Firestore emulator – falling back to production Firestore."
   );
@@ -15,6 +22,7 @@ if (process.env.FIRESTORE_EMULATOR_HOST) {
 }
 
 import { defineFirestoreRetriever } from "@genkit-ai/firebase";
+import { devLocalVectorstore, devLocalRetrieverRef } from "@genkit-ai/dev-local-vectorstore";
 import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -34,20 +42,32 @@ const ai = genkit({
     // by passing in a config object; if you don't, the Vertex AI plugin uses
     // the value from the GCLOUD_PROJECT environment variable.
     vertexAI({ location: "us-central1" }),
+    ...(USE_LOCAL_VECTORSTORE
+      ? [
+          devLocalVectorstore([
+            {
+              indexName: "faqs",
+              embedder: textEmbedding005,
+            },
+          ]),
+        ]
+      : []),
   ],
 });
 
 export { ai };
 
-const faqRetriever = defineFirestoreRetriever(ai, {
-  name: "faqRetriever",
-  firestore: getFirestore(),
-  collection: "faqs",
-  contentField: "answer",      // field given to Gemini
-  vectorField: "embedding",
-  embedder: textEmbedding005,
-  distanceMeasure: "DOT_PRODUCT",
-});
+const faqRetriever = USE_LOCAL_VECTORSTORE
+  ? devLocalRetrieverRef("faqs")
+  : defineFirestoreRetriever(ai, {
+      name: "faqRetriever",
+      firestore: getFirestore(),
+      collection: "faqs",
+      contentField: "answer",      // field given to Gemini
+      vectorField: "embedding",
+      embedder: textEmbedding005,
+      distanceMeasure: "DOT_PRODUCT",
+    });
 export { faqRetriever };
 
 const faqChatFlow = ai.defineFlow(
