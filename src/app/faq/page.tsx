@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/firebase/client";
-
-const FAQ_CHAT_ENDPOINT = "/api/faqchat";   // proxy route defined below
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "@/firebase/client";
 
 type FAQ = {
   id: string;
@@ -93,16 +92,12 @@ export default function FAQPage() {
             setInput("");
             setSending(true);
             try {
-              const res = await fetch(FAQ_CHAT_ENDPOINT, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ input: userText }),
-              });
-              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              const { result } = await res.json();          // Genkit reply
+              const callGemini = httpsCallable(functions, "faqChat");
+              const res = await callGemini(userText);       // param is the question string
+              const result = res.data as string;
               setMessages(prev => [
                 ...prev,
-                { author: "ai", text: result as string },
+                { author: "ai", text: result },
               ]);
             } catch (err) {
               setMessages(prev => [
