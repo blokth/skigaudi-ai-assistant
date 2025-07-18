@@ -1,7 +1,7 @@
 import { genkit, z } from "genkit";
 import {
   vertexAI,
-  textEmbeddingGecko003,
+  geminiEmbedding001,
   gemini15Flash,
 } from "@genkit-ai/vertexai";
 import { defineFirestoreRetriever } from "@genkit-ai/firebase";
@@ -27,7 +27,7 @@ const faqRetriever = defineFirestoreRetriever(ai, {
   collection: "faqs",
   contentField: "answer",      // field given to Gemini
   vectorField: "embedding",
-  embedder: textEmbeddingGecko003,
+  embedder: geminiEmbedding001,
   distanceMeasure: "DOT_PRODUCT",
 });
 export { faqRetriever };

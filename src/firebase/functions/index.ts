@@ -2,7 +2,7 @@ import { onCallGenkit } from "firebase-functions/https";
 import { menuSuggestionFlow, faqChatFlow, ai } from "./genkit/flows";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";
-import { textEmbeddingGecko003 } from "@genkit-ai/vertexai";
+import { geminiEmbedding001 } from "@genkit-ai/vertexai";
 
 export const menuSuggestion = onCallGenkit({}, menuSuggestionFlow);
 export const faqChat = onCallGenkit({}, faqChatFlow);
@@ -18,7 +18,7 @@ export const faqEmbeddingIndexer = onDocumentWritten(
 
     const embedding =
       (await ai.embed({
-        embedder: textEmbeddingGecko003,
+        embedder: geminiEmbedding001,
         content: `${data.question}\n${data.answer}`,
       }))[0].embedding;
 
