@@ -97,22 +97,14 @@ const faqChatFlow = ai.defineFlow(
       options: { k: 5 },   // number of nearest FAQs to return
     });
 
-    // 2. assemble context block for RAG
-    const context = docs
-      .map(d => `Q: ${(d.data as any).question}\nA: ${(d.data as any).answer}`)
-      .join("\n---\n");
-
-    // 3. prompt Gemini with context
-    const prompt = `You are the helpful FAQ assistant for the SkiGaudi student winter festival.
-Relevant FAQs:
-${context}
-
-User question: ${question}
-Answer clearly, concisely and reference the relevant FAQ if possible.`;
-
+    // 2. generate the answer, passing the retrieved docs as context
     const { response, stream } = ai.generateStream({
       model: gemini20Flash,
-      prompt,
+      prompt: `You are the helpful FAQ assistant for the SkiGaudi student winter festival.
+Use only the FAQ content provided to answer the question.
+If the answer isn't in the FAQs, reply that you don't have enough information.
+Question: ${question}`,
+      docs,                       // <- RAG context exactly as in the guide
       config: { temperature: 0.8 },
     });
     for await (const chunk of stream) sendChunk(chunk.text);
