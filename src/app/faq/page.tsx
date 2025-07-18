@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "@/firebase/client";
 import { db } from "@/firebase/client";
 
 type FAQ = {
@@ -13,6 +15,11 @@ type FAQ = {
 export default function FAQPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<
+    { author: "user" | "ai"; text: string }[]
+  >([]);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -55,6 +62,71 @@ export default function FAQPage() {
           <p className="text-center text-gray-500">No FAQs yet.</p>
         )}
       </ul>
+
+      {/* Chat with Gemini */}
+      <section className="mt-12 border rounded-lg p-4 space-y-4">
+        <h2 className="text-2xl font-semibold">Chat with Gemini</h2>
+        <div className="max-h-80 overflow-y-auto space-y-2">
+          {messages.map((m, idx) => (
+            <p
+              key={idx}
+              className={m.author === "user" ? "text-right" : "text-left"}
+            >
+              <span
+                className={`inline-block px-3 py-2 rounded-lg ${
+                  m.author === "user"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 dark:bg-gray-800"
+                }`}
+              >
+                {m.text}
+              </span>
+            </p>
+          ))}
+        </div>
+        <form
+          onSubmit={async e => {
+            e.preventDefault();
+            if (!input.trim()) return;
+            const userText = input;
+            setMessages(prev => [...prev, { author: "user", text: userText }]);
+            setInput("");
+            setSending(true);
+            try {
+              const callGemini = httpsCallable(functions, "faqChat");
+              const res = await callGemini(userText);
+              setMessages(prev => [
+                ...prev,
+                { author: "ai", text: res.data as string },
+              ]);
+            } catch (err) {
+              setMessages(prev => [
+                ...prev,
+                { author: "ai", text: "Something went wrong." },
+              ]);
+            } finally {
+              setSending(false);
+            }
+          }}
+          className="flex gap-2"
+        >
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            disabled={sending}
+            className="flex-grow border rounded px-3 py-2"
+            placeholder="Ask a question…"
+          />
+          <button
+            type="submit"
+            disabled={sending}
+            className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
+          >
+            Send
+          </button>
+        </form>
+      </section>
     </main>
   );
 }

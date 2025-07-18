@@ -51,4 +51,29 @@ const menuSuggestionFlow = ai.defineFlow({
   }
 );
 
-export { menuSuggestionFlow };
+const faqChatFlow = ai.defineFlow(
+  {
+    name: "faqChatFlow",
+    inputSchema: z
+      .string()
+      .describe("A user question for the SkiGaudi FAQ assistant"),
+    outputSchema: z.string(),
+    streamSchema: z.string(),
+  },
+  async (question, { sendChunk }) => {
+    const prompt = `You are the helpful FAQ assistant for the SkiGaudi student winter festival. Answer the following question clearly and concisely:\n\n${question}`;
+    const { response, stream } = ai.generateStream({
+      model: gemini20Flash,
+      prompt,
+      config: { temperature: 0.8 },
+    });
+
+    for await (const chunk of stream) {
+      sendChunk(chunk.text);
+    }
+
+    return (await response).text;
+  }
+);
+
+export { menuSuggestionFlow, faqChatFlow };
