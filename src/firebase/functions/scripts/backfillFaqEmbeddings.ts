@@ -1,6 +1,6 @@
 import { textEmbeddingGecko003 } from "@genkit-ai/vertexai";
 import { FieldValue } from "firebase-admin/firestore";
-import { ai } from "../src/firebase/functions/genkit/flows";
+import { ai } from "../genkit/flows";
 import { getFirestore } from "firebase-admin/firestore";
 
 (async () => {
