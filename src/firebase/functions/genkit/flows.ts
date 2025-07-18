@@ -18,7 +18,15 @@ import { defineFirestoreRetriever } from "@genkit-ai/firebase";
 import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 
-if (!admin.apps.length) admin.initializeApp();
+if (!admin.apps.length) {
+  admin.initializeApp({
+    // works in local scripts as well as Cloud Functions
+    projectId:
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+      process.env.GOOGLE_CLOUD_PROJECT ||
+      "skigaudi-ai-assistant",
+  });
+}
 
 const ai = genkit({
   plugins: [

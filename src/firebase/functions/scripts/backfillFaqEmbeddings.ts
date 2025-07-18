@@ -1,3 +1,6 @@
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });   // must be first
+
 import { textEmbedding005 } from "@genkit-ai/vertexai";
 import { FieldValue } from "firebase-admin/firestore";
 import { ai } from "../genkit/flows";
