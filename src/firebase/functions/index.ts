@@ -3,6 +3,7 @@ import { menuSuggestionFlow, faqChatFlow, ai } from "./genkit/flows";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";   // NEW
 import { textEmbeddingGecko003 } from "@genkit-ai/vertexai";
+import { FieldValue } from "firebase-admin/firestore";        // ADD
 
 export const menuSuggestion = onCallGenkit({}, menuSuggestionFlow);
 export const faqChat = onCallGenkit({}, faqChatFlow);
