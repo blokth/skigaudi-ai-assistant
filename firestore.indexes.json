@@ -22,5 +22,14 @@
   //   ]
   // ]
   "indexes": [],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "faqs",
+      "fieldPath": "embedding",
+      "vectorConfig": {
+        "dimension": 768,            // adjust if you pick a different embed model
+        "similarity": "DOT_PRODUCT"
+      }
+    }
+  ]
 }
