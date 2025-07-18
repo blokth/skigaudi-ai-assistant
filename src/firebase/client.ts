@@ -30,6 +30,7 @@ if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true") {
   const authPort = Number(process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT || 9099);
 
   connectFunctionsEmulator(functions, "localhost", fnPort);
-  connectFirestoreEmulator(db, "localhost", fsPort);
+  // Vector search requires production Firestore; keep reads/writes there.
+  // connectFirestoreEmulator(db, "localhost", fsPort);
   connectAuthEmulator(auth, `http://localhost:${authPort}`, { disableWarnings: true });
 }

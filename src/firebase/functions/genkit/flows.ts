@@ -5,6 +5,15 @@ import {
   textEmbedding005
 } from "@genkit-ai/vertexai";
 
+// Vector search isn’t implemented in the Firestore emulator.
+// Force this process to talk to production so the retriever works.
+if (process.env.FIRESTORE_EMULATOR_HOST) {
+  console.warn(
+    "Vector search not supported in Firestore emulator – falling back to production Firestore."
+  );
+  delete process.env.FIRESTORE_EMULATOR_HOST;
+}
+
 import { defineFirestoreRetriever } from "@genkit-ai/firebase";
 import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
