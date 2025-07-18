@@ -1,8 +1,8 @@
 import { genkit, z } from "genkit";
 import {
   vertexAI,
-  gemini15Flash,
-  geminiEmbedding001,
+  gemini20Flash,
+  textEmbedding005
 } from "@genkit-ai/vertexai";
 
 import { defineFirestoreRetriever } from "@genkit-ai/firebase";
@@ -28,7 +28,7 @@ const faqRetriever = defineFirestoreRetriever(ai, {
   collection: "faqs",
   contentField: "answer",      // field given to Gemini
   vectorField: "embedding",
-  embedder: geminiEmbedding001,
+  embedder: textEmbedding005,
   distanceMeasure: "DOT_PRODUCT",
 });
 export { faqRetriever };
@@ -44,7 +44,7 @@ const menuSuggestionFlow = ai.defineFlow({
   const prompt =
     `Suggest an item for the menu of a ${subject} themed restaurant`;
   const { response, stream } = ai.generateStream({
-    model: gemini15Flash,
+    model: gemini20Flash,
     prompt: prompt,
     config: {
       temperature: 1,
@@ -94,7 +94,7 @@ User question: ${question}
 Answer clearly, concisely and reference the relevant FAQ if possible.`;
 
     const { response, stream } = ai.generateStream({
-      model: gemini15Flash,
+      model: gemini20Flash,
       prompt,
       config: { temperature: 0.8 },
     });
