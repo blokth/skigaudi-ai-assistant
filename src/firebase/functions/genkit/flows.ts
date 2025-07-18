@@ -2,8 +2,8 @@ import { genkit, z } from "genkit";
 import {
   vertexAI,
   gemini15Flash,
+  geminiEmbedding001,
 } from "@genkit-ai/vertexai";
-import geminiEmbedding001 from "@genkit-ai/vertexai"
 
 import { defineFirestoreRetriever } from "@genkit-ai/firebase";
 import * as admin from "firebase-admin";
