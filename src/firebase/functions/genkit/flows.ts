@@ -1,8 +1,8 @@
 import { genkit, z } from "genkit";
 import {
   vertexAI,
-  textembeddingGecko,
-  geminiFlash,
+  textEmbeddingGecko003,
+  gemini15Flash,
 } from "@genkit-ai/vertexai";
 import { defineFirestoreRetriever } from "@genkit-ai/firebase";
 import * as admin from "firebase-admin";
@@ -27,7 +27,7 @@ const faqRetriever = defineFirestoreRetriever(ai, {
   collection: "faqs",
   contentField: "answer",      // field given to Gemini
   vectorField: "embedding",
-  embedder: textembeddingGecko,
+  embedder: textEmbeddingGecko003,
   distanceMeasure: "DOT_PRODUCT",
 });
 export { faqRetriever };
@@ -43,7 +43,7 @@ const menuSuggestionFlow = ai.defineFlow({
     const prompt =
       `Suggest an item for the menu of a ${subject} themed restaurant`;
     const { response, stream } = ai.generateStream({
-      model: geminiFlash,
+      model: gemini15Flash,
       prompt: prompt,
       config: {
         temperature: 1,
@@ -73,15 +73,15 @@ const faqChatFlow = ai.defineFlow(
   },
   async (question, { sendChunk }) => {
     // 1. retrieve k-nearest FAQs via Firestore Vector Search
-    const { documents } = await ai.retrieve({
+    const docs = await ai.retrieve({
       retriever: faqRetriever,
       query: question,
       options: { limit: 5 },
     });
 
     // 2. assemble context block for RAG
-    const context = documents
-      .map(d => `Q: ${d.data.question}\nA: ${d.data.answer}`)
+    const context = docs
+      .map(d => `Q: ${(d.data as any).question}\nA: ${(d.data as any).answer}`)
       .join("\n---\n");
 
     // 3. prompt Gemini with context
@@ -93,7 +93,7 @@ User question: ${question}
 Answer clearly, concisely and reference the relevant FAQ if possible.`;
 
     const { response, stream } = ai.generateStream({
-      model: geminiFlash,
+      model: gemini15Flash,
       prompt,
       config: { temperature: 0.8 },
     });

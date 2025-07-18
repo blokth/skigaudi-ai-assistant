@@ -2,7 +2,7 @@ import { onCallGenkit } from "firebase-functions/https";
 import { menuSuggestionFlow, faqChatFlow, ai } from "./genkit/flows";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";   // NEW
-import { textembeddingGecko } from "@genkit-ai/vertexai";
+import { textEmbeddingGecko003 } from "@genkit-ai/vertexai";
 
 export const menuSuggestion = onCallGenkit({}, menuSuggestionFlow);
 export const faqChat = onCallGenkit({}, faqChatFlow);
@@ -11,16 +11,19 @@ export const faqChat = onCallGenkit({}, faqChatFlow);
 export const faqEmbeddingIndexer = onDocumentWritten(
   { document: "faqs/{docId}", region: "us-central1" },
   async event => {
-    const data = event.data?.after?.data();
+    const afterSnap = event.data?.after;
+    if (!afterSnap) return;
+    const data = afterSnap.data();
     if (!data) return;
 
-    const { embedding } = await ai.embed({
-      model: textembeddingGecko,
-      text: `${data.question}\n${data.answer}`,
-    });
+    const embedding =
+      (await ai.embed({
+        embedder: textEmbeddingGecko003,
+        content: `${data.question}\n${data.answer}`,
+      }))[0].embedding;
 
-    await event.data.after.ref.update({
-      embedding: FieldValue.vector(embedding),   // ⭐️ write as Vector
+    await afterSnap.ref.update({
+      embedding: FieldValue.vector(embedding),
     });
   }
 );
