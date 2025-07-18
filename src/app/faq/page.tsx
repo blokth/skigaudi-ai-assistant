@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
-import { functions } from "@/firebase/client";
 import { db } from "@/firebase/client";
+
+const FAQ_CHAT_ENDPOINT =
+  `${process.env.NEXT_PUBLIC_FAQ_CHAT_URL!}/flows/faqChatFlow:run`;
 
 type FAQ = {
   id: string;
@@ -93,11 +94,16 @@ export default function FAQPage() {
             setInput("");
             setSending(true);
             try {
-              const callGemini = httpsCallable(functions, "faqChat");
-              const res = await callGemini(userText);
+              const res = await fetch(FAQ_CHAT_ENDPOINT, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ input: userText }),
+              });
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const { result } = await res.json();          // Genkit reply
               setMessages(prev => [
                 ...prev,
-                { author: "ai", text: res.data as string },
+                { author: "ai", text: result as string },
               ]);
             } catch (err) {
               setMessages(prev => [
