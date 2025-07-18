@@ -1,4 +1,4 @@
-import { textEmbeddingGecko003 } from "@genkit-ai/vertexai";
+import { textEmbedding005 } from "@genkit-ai/vertexai";
 import { FieldValue } from "firebase-admin/firestore";
 import { ai } from "../genkit/flows";
 import { getFirestore } from "firebase-admin/firestore";
@@ -12,7 +12,7 @@ import { getFirestore } from "firebase-admin/firestore";
 
     const embedding =
       (await ai.embed({
-        embedder: textEmbeddingGecko003,
+        embedder: textEmbedding005,
         content: `${data.question}\n${data.answer}`,
       }))[0].embedding;
 
