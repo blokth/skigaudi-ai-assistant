@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { httpsCallableFromURL } from "firebase/functions";
+import { httpsCallable } from "firebase/functions";
 import { db, functions } from "@/firebase/client";
 
 type FAQ = {
@@ -92,10 +92,7 @@ export default function FAQPage() {
             setInput("");
             setSending(true);
             try {
-              const callGemini = httpsCallableFromURL(
-                functions,
-                process.env.NEXT_PUBLIC_FAQ_CHAT_URL!
-              );
+              const callGemini = httpsCallable(functions, "faqChat");
               const res = await callGemini(userText);       // param is the question string
               const result = res.data as string;
               setMessages(prev => [
