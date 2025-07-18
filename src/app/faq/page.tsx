@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/firebase/client";
 
-const FAQ_CHAT_ENDPOINT =
-  `${process.env.NEXT_PUBLIC_FAQ_CHAT_URL!}/flows/faqChatFlow:run`;
+const FAQ_CHAT_ENDPOINT = "/api/faqchat";   // proxy route defined below
 
 type FAQ = {
   id: string;
