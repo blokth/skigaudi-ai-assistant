@@ -14,6 +14,8 @@ const ai = genkit({
   ],
 });
 
+export { ai };
+
 // Define a simple flow that prompts an LLM to generate menu suggestions.
 const menuSuggestionFlow = ai.defineFlow({
     name: "menuSuggestionFlow",
