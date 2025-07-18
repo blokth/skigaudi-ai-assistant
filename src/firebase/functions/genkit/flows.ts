@@ -4,7 +4,7 @@ import {
   textembeddingGecko,
   geminiFlash,
 } from "@genkit-ai/vertexai";
-import { defineFirestoreRetriever } from "@genkit-ai/firestore";
+import { defineFirestoreRetriever } from "@genkit-ai/firebase";
 import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -73,9 +73,10 @@ const faqChatFlow = ai.defineFlow(
   },
   async (question, { sendChunk }) => {
     // 1. retrieve k-nearest FAQs via Firestore Vector Search
-    const { documents } = await faqRetriever.retrieve({
+    const { documents } = await ai.retrieve({
+      retriever: faqRetriever,
       query: question,
-      topK: 5,
+      options: { limit: 5 },
     });
 
     // 2. assemble context block for RAG
