@@ -1,5 +1,10 @@
 import { genkit, z } from "genkit";
-import { vertexAI, textembeddingGecko } from "@genkit-ai/vertexai";
+import {
+  vertexAI,
+  textembeddingGecko,
+  geminiPro,                 // ✅ real model constant
+} from "@genkit-ai/vertexai";
+import { defineFirestoreRetriever } from "@genkit-ai/firestore";
 import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -16,6 +21,17 @@ const ai = genkit({
 
 export { ai };
 
+const faqRetriever = defineFirestoreRetriever(ai, {
+  name: "faqRetriever",
+  firestore: getFirestore(),
+  collection: "faqs",
+  contentField: "answer",      // field given to Gemini
+  vectorField: "embedding",
+  embedder: textembeddingGecko,
+  distanceMeasure: "DOT_PRODUCT",
+});
+export { faqRetriever };
+
 // Define a simple flow that prompts an LLM to generate menu suggestions.
 const menuSuggestionFlow = ai.defineFlow({
     name: "menuSuggestionFlow",
@@ -27,7 +43,7 @@ const menuSuggestionFlow = ai.defineFlow({
     const prompt =
       `Suggest an item for the menu of a ${subject} themed restaurant`;
     const { response, stream } = ai.generateStream({
-      model: gemini20Flash,
+      model: geminiPro,
       prompt: prompt,
       config: {
         temperature: 1,
@@ -56,28 +72,18 @@ const faqChatFlow = ai.defineFlow(
     streamSchema: z.string(),
   },
   async (question, { sendChunk }) => {
-    /* ---------- 1. embed the user question ---------- */
-    const { embedding: queryVec } = await ai.embed({
-      model: textembeddingGecko,
-      text: question,
+    // 1. retrieve k-nearest FAQs via Firestore Vector Search
+    const { documents } = await faqRetriever.retrieve({
+      query: question,
+      topK: 5,
     });
 
-    /* ---------- 2. retrieve similar FAQs (vector search) ---------- */
-    const db = getFirestore();
-    const snap = await (db as any)
-      .collection("faqs")
-      .orderBy("embedding", "vector", { vector: queryVec, limit: 5 })
-      .select("question", "answer")
-      .get();
-
-    const context = snap.docs
-      .map(d => {
-        const { question, answer } = d.data() as any;
-        return `Q: ${question}\nA: ${answer}`;
-      })
+    // 2. assemble context block for RAG
+    const context = documents
+      .map(d => `Q: ${d.data.question}\nA: ${d.data.answer}`)
       .join("\n---\n");
 
-    /* ---------- 3. build prompt & stream Gemini answer ---------- */
+    // 3. prompt Gemini with context
     const prompt = `You are the helpful FAQ assistant for the SkiGaudi student winter festival.
 Relevant FAQs:
 ${context}
@@ -86,7 +92,7 @@ User question: ${question}
 Answer clearly, concisely and reference the relevant FAQ if possible.`;
 
     const { response, stream } = ai.generateStream({
-      model: gemini20Flash,
+      model: geminiPro,
       prompt,
       config: { temperature: 0.8 },
     });
