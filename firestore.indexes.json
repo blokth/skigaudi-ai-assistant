@@ -1,35 +1,17 @@
 {
-  // Example:
-  //
-  // "indexes": [
-  //   {
-  //     "collectionGroup": "widgets",
-  //     "queryScope": "COLLECTION",
-  //     "fields": [
-  //       { "fieldPath": "foo", "arrayConfig": "CONTAINS" },
-  //       { "fieldPath": "bar", "mode": "DESCENDING" }
-  //     ]
-  //   },
-  //
-  //  "fieldOverrides": [
-  //    {
-  //      "collectionGroup": "widgets",
-  //      "fieldPath": "baz",
-  //      "indexes": [
-  //        { "order": "ASCENDING", "queryScope": "COLLECTION" }
-  //      ]
-  //    },
-  //   ]
-  // ]
-  "indexes": [],
-  "fieldOverrides": [
+  "indexes": [
     {
       "collectionGroup": "faqs",
-      "fieldPath": "embedding",
-      "vectorConfig": {
-        "dimension": 768,            // adjust if you pick a different embed model
-        "similarity": "DOT_PRODUCT"
-      }
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "embedding",
+          "vectorConfig": {
+            "dimension": 768,
+            "distanceMeasure": "DOT_PRODUCT"
+          }
+        }
+      ]
     }
   ]
 }
