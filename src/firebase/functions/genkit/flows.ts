@@ -2,7 +2,7 @@ import { genkit, z } from "genkit";
 import {
   vertexAI,
   textembeddingGecko,
-  geminiPro,                 // ✅ real model constant
+  geminiFlash,
 } from "@genkit-ai/vertexai";
 import { defineFirestoreRetriever } from "@genkit-ai/firestore";
 import * as admin from "firebase-admin";
@@ -43,7 +43,7 @@ const menuSuggestionFlow = ai.defineFlow({
     const prompt =
       `Suggest an item for the menu of a ${subject} themed restaurant`;
     const { response, stream } = ai.generateStream({
-      model: geminiPro,
+      model: geminiFlash,
       prompt: prompt,
       config: {
         temperature: 1,
@@ -92,7 +92,7 @@ User question: ${question}
 Answer clearly, concisely and reference the relevant FAQ if possible.`;
 
     const { response, stream } = ai.generateStream({
-      model: geminiPro,
+      model: geminiFlash,
       prompt,
       config: { temperature: 0.8 },
     });
