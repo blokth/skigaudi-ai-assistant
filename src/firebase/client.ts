@@ -11,6 +11,10 @@ import {
   getFunctions,
   connectFunctionsEmulator,
 } from "firebase/functions";
+import {
+  getStorage,
+  connectStorageEmulator,
+} from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -22,6 +26,7 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, "us-central1");
+export const storage = getStorage(app);
 
 // Use emulator when requested
 if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true") {
@@ -30,6 +35,8 @@ if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true") {
   const authPort = Number(process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT || 9099);
 
   connectFunctionsEmulator(functions, "localhost", fnPort);
+  const stPort = Number(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT || 9199);
+  connectStorageEmulator(storage, "localhost", stPort);
   // Vector search requires production Firestore; keep reads/writes there.
   // connectFirestoreEmulator(db, "localhost", fsPort);
   // Keep Auth on production when Firestore is on production.

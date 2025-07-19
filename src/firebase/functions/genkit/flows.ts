@@ -49,6 +49,10 @@ const ai = genkit({
               indexName: "faqs",
               embedder: textEmbedding005,
             },
+            {
+              indexName: "knowledge",
+              embedder: textEmbedding005,
+            },
           ]),
         ]
       : []),

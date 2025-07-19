@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ref, uploadBytes } from "firebase/storage";
+import { storage } from "@/firebase/client";
 import {
   collection,
   getDocs,
@@ -28,6 +30,8 @@ export default function AdminFAQ() {
   const [answer, setAnswer] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   // redirect unauthenticated or unauthorized users
   useEffect(() => {
@@ -81,6 +85,34 @@ export default function AdminFAQ() {
     setSaving(false);
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // accept only PDF, TXT or MD
+    if (
+      !["application/pdf", "text/plain", "text/markdown"].includes(file.type) &&
+      !/\.(pdf|txt|md)$/i.test(file.name)
+    ) {
+      setUploadError("Unsupported file type.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError("");
+    try {
+      const storageRef = ref(storage, `knowledge/${file.name}`);
+      await uploadBytes(storageRef, file);
+      alert("File uploaded successfully and will be processed shortly.");
+    } catch (err) {
+      console.error(err);
+      setUploadError("Upload failed.");
+    } finally {
+      setUploading(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
   if (authLoading || !user || !isAdmin) {
     return (
       <main className="min-h-screen flex items-center justify-center">
@@ -116,6 +148,19 @@ export default function AdminFAQ() {
         >
           {saving ? "Saving…" : "Save"}
         </button>
+      </section>
+
+      <section className="border rounded-lg p-4 space-y-4">
+        <h2 className="text-2xl font-semibold">Upload knowledge document</h2>
+        <input
+          type="file"
+          accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
+          onChange={handleFileSelect}
+          disabled={uploading}
+          className="w-full border rounded px-3 py-2"
+        />
+        {uploadError && <p className="text-red-500 text-sm">{uploadError}</p>}
+        {uploading && <p className="text-sm">Uploading…</p>}
       </section>
 
       <section className="space-y-4">
