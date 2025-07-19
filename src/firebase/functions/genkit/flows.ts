@@ -74,6 +74,19 @@ const faqRetriever = USE_LOCAL_VECTORSTORE
     });
 export { faqRetriever };
 
+const knowledgeRetriever = USE_LOCAL_VECTORSTORE
+  ? devLocalRetrieverRef("knowledge")
+  : defineFirestoreRetriever(ai, {
+      name: "knowledgeRetriever",
+      firestore: getFirestore(),
+      collection: "knowledge",
+      contentField: "content",      // full document text
+      vectorField: "embedding",
+      embedder: textEmbedding005,
+      distanceMeasure: "DOT_PRODUCT",
+    });
+export { knowledgeRetriever };
+
 const faqChatFlow = ai.defineFlow(
   {
     name: "faqChatFlow",
@@ -84,19 +97,19 @@ const faqChatFlow = ai.defineFlow(
     streamSchema: z.string(),
   },
   async (question, { sendChunk }) => {
-    // 1. retrieve k-nearest FAQs via Firestore Vector Search
+    // 1. retrieve nearest FAQs and knowledge docs via vector search
     const docs = await ai.retrieve({
-      retriever: faqRetriever,
+      retriever: [faqRetriever, knowledgeRetriever],
       query: question,
-      options: { k: 5 },   // number of nearest FAQs to return
+      options: { k: 8 },
     });
 
     // 2. generate the answer, passing the retrieved docs as context
     const { response, stream } = ai.generateStream({
       model: gemini20Flash,
-      prompt: `You are the helpful FAQ assistant for the SkiGaudi student winter festival.
-Use only the FAQ content provided to answer the question.
-If the answer isn't in the FAQs, reply that you don't have enough information.
+      prompt: `You are the helpful assistant for the SkiGaudi student winter festival.
+Use the provided FAQ answers and knowledge documents as context to answer the question.
+If the answer isn't covered, reply that you don't have enough information.
 Question: ${question}`,
       docs,                       // <- RAG context exactly as in the guide
       config: { temperature: 0.8 },
