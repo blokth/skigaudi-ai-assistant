@@ -178,8 +178,9 @@ const faqChatFlow = ai.defineFlow(
     const knowledgeDocs = await ai.retrieve({ retriever: knowledgeRetriever, query: question, options: { k: 4 } });
     const docs = [...faqDocs, ...knowledgeDocs];
 
-    // 2. expose CRUD tools only for admins
-    const isAdmin = !!context.auth?.token?.admin;
+    // 2. expose CRUD tools only for authenticated non-anonymous users
+    const isAdmin =
+      context.auth?.token?.firebase?.sign_in_provider !== "anonymous";
     const tools   = isAdmin ? [createFaq, updateFaq, deleteFaq] : [];
 
     // 3. generate answer / handle tool-calls
