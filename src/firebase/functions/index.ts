@@ -1,4 +1,4 @@
-import { onCallGenkit } from "firebase-functions/v2/genkit";
+import { onCallGenkit } from "firebase-functions/https";
 import { faqChatFlow, ai } from "./genkit/flows";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";

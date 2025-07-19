@@ -10,6 +10,8 @@ firebase-debug.*.log*
 .next/
 
 src/firebase/functions/.genkit/
+src/firebase/functions/lib/
+__db_faqs*
 
 # Firebase cache
 .firebase/
@@ -68,6 +70,7 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.local
 
 # dataconnect generated files
 .dataconnect
