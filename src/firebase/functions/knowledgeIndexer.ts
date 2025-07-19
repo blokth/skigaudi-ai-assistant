@@ -1,8 +1,6 @@
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { FieldValue } from "firebase-admin/firestore";
 import { textEmbedding005 } from "@genkit-ai/vertexai";
-import { devLocalIndexerRef } from "@genkit-ai/dev-local-vectorstore";
-import { Document } from "genkit/retriever";
 import { ai } from "./genkit/flows";
 import * as admin from "firebase-admin";
 import * as fs from "fs";
@@ -15,11 +13,6 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-const USE_LOCAL_VECTORSTORE =
-  process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true" ||
-  !!process.env.FIRESTORE_EMULATOR_HOST;
-
-const knowledgeDevIndexer = devLocalIndexerRef("knowledge");
 
 export const knowledgeDocIndexer = onObjectFinalized(
   { region: "us-central1" },
@@ -70,21 +63,7 @@ export const knowledgeDocIndexer = onObjectFinalized(
       content: chunks,
     });
 
-    if (USE_LOCAL_VECTORSTORE) {
-      const documents = chunks.map((chunk, idx) =>
-        Document.fromText(chunk, {
-          id: `${filePath}#${idx}`,
-          title: filePath.split("/").pop(),
-          filePath,
-          chunk: idx,
-        })
-      );
-      await ai.index({
-        indexer: knowledgeDevIndexer,
-        documents,
-      });
-    } else {
-      const batch = admin.firestore().batch();
+    const batch = admin.firestore().batch();
       chunks.forEach((chunk, idx) => {
         const docRef = admin
           .firestore()
@@ -101,6 +80,5 @@ export const knowledgeDocIndexer = onObjectFinalized(
         );
       });
       await batch.commit();
-    }
   }
 );
