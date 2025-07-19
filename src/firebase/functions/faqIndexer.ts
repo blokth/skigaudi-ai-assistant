@@ -16,6 +16,40 @@ const USE_LOCAL_VECTORSTORE =
 
 const faqDevIndexer = devLocalIndexerRef("faqs");
 
+/**
+ * Embed and index a single FAQ document snapshot.
+ * Re-used by the Firestore trigger and the admin CRUD tools so we
+ * don’t invoke the Firebase onDocumentWritten handler manually.
+ */
+export async function indexFaqDocument(
+  snapshot: admin.firestore.DocumentSnapshot
+) {
+  const data = snapshot.data();
+  if (!data) return;
+
+  const embedding = (
+    await ai.embed({
+      embedder: textEmbedding005,
+      content: `${data.question}\n${data.answer}`,
+    })
+  )[0].embedding;
+
+  if (USE_LOCAL_VECTORSTORE) {
+    const document = Document.fromText(
+      `${data.question}\n${data.answer}`,
+      { id: snapshot.id, question: data.question }
+    );
+    await ai.index({
+      indexer: faqDevIndexer,
+      documents: [document],
+    });
+  } else {
+    await snapshot.ref.update({
+      embedding: FieldValue.vector(embedding),
+    });
+  }
+}
+
 export const faqEmbeddingIndexer = onDocumentWritten(
   { document: "faqs/{docId}", region: "us-central1" },
   async event => {
