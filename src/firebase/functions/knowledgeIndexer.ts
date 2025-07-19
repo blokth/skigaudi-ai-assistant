@@ -59,7 +59,7 @@ export const knowledgeDocIndexer = onObjectFinalized(
 
     // Split the document into smaller overlapping chunks for higher-quality retrieval.
     const chunks: string[] = chunkText(text, {
-      minLength: 800,
+      minLength: 200,
       maxLength: 1500,
       overlap: 200,
       splitter: "sentence",
