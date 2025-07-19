@@ -8,10 +8,18 @@ import { tmpdir } from "os";
 import { join } from "path";
 import pdfParse from "pdf-parse";
 import { chunk as chunkText } from "llm-chunk";
+import { devLocalIndexerRef } from "@genkit-ai/dev-local-vectorstore";
+import { Document } from "genkit/retriever";
 
 if (!admin.apps.length) {
   admin.initializeApp();
 }
+
+const USE_LOCAL_VECTORSTORE =
+  process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true" ||
+  !!process.env.FIRESTORE_EMULATOR_HOST;
+
+const knowledgeDevIndexer = devLocalIndexerRef("knowledge");
 
 
 export const knowledgeDocIndexer = onObjectFinalized(
@@ -62,7 +70,19 @@ export const knowledgeDocIndexer = onObjectFinalized(
       chunks.map(async c => (await ai.embed({ embedder: textEmbedding005, content: c }))[0].embedding)
     );
 
-    const batch = admin.firestore().batch();
+    if (USE_LOCAL_VECTORSTORE) {
+      const documents = chunks.map((chunk, idx) =>
+        Document.fromText(chunk, {
+          id: filePath.replace(/\//g, "__") + `__${idx}`,
+          title: filePath.split("/").pop(),
+        })
+      );
+      await ai.index({
+        indexer: knowledgeDevIndexer,
+        documents,
+      });
+    } else {
+      const batch = admin.firestore().batch();
       chunks.forEach((chunk, idx) => {
         const docRef = admin
           .firestore()
@@ -79,5 +99,6 @@ export const knowledgeDocIndexer = onObjectFinalized(
         );
       });
       await batch.commit();
+    }
   }
 );
