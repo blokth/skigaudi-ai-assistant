@@ -27,7 +27,7 @@ const faqDevIndexer = devLocalIndexerRef("faqs");
 export const faqChat = onCallGenkit({ region: "us-central1" }, faqChatFlow);
 
 // Keep FAQ docs vectorised
-const faqEmbeddingIndexerLegacy = onDocumentWritten(
+export const faqEmbeddingIndexerLegacy = onDocumentWritten(
   { document: "faqs/{docId}", region: "us-central1" },
   async event => {
     const afterSnap = event.data?.after;
@@ -63,7 +63,7 @@ export { knowledgeDocIndexer } from "./knowledgeIndexer";
 
 const knowledgeDevIndexer = devLocalIndexerRef("knowledge");
 
-const knowledgeDocIndexerLegacy = onObjectFinalized(
+export const knowledgeDocIndexerLegacy = onObjectFinalized(
   { region: "us-central1" },
   async event => {
     const object = event.data;
