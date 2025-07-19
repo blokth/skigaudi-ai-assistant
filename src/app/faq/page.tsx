@@ -28,22 +28,14 @@ export default function FAQPage() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer]   = useState("");
   const [saving, setSaving]   = useState(false);
-  const [error, setError]     = useState("");
   const [uploading, setUploading]   = useState(false);
   const [uploadError, setUploadError] = useState("");
 
-  useEffect(() => {
-    (async () => {
-      const snap = await getDocs(collection(db, "faqs"));
-      setFaqs(
-        snap.docs.map(d => ({
-          id: d.id,
-          ...(d.data() as Omit<FAQ, "id">),
-        }))
-      );
-      setLoading(false);
-    })();
-  }, []);
+  const sectionClass =
+    "mb-8 space-y-4 p-6 rounded-xl bg-white/60 dark:bg-gray-800/50 " +
+    "backdrop-blur ring-1 ring-gray-200 dark:ring-gray-700";
+
+  useEffect(() => { loadFaqs(); }, []);
 
   // admin helpers
   const loadFaqs = async () => {
@@ -54,6 +46,7 @@ export default function FAQPage() {
         ...(d.data() as Omit<FAQ, "id">),
       }))
     );
+    setLoading(false);
   };
 
   const createFaq = async () => {
@@ -127,26 +120,27 @@ export default function FAQPage() {
 
       {/* Admin: Add new FAQ */}
       {isAdmin && (
-        <section className="border rounded-lg p-4 space-y-4 mb-8">
+        <section className={sectionClass}>
           <h2 className="text-2xl font-semibold">Add new FAQ</h2>
           <input
             type="text"
             placeholder="Question"
             value={question}
             onChange={e => setQuestion(e.target.value)}
-            className="w-full border rounded px-3 py-2"
+            className="block w-full bg-transparent border border-gray-300 dark:border-gray-600
+                       rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
           <textarea
             placeholder="Answer"
             value={answer}
             onChange={e => setAnswer(e.target.value)}
-            className="w-full border rounded px-3 py-2 h-24"
+            className="block w-full bg-transparent border border-gray-300 dark:border-gray-600
+                       rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 h-24"
           />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
             onClick={createFaq}
             disabled={saving}
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
+            className="px-4 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-500 disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save"}
           </button>
@@ -155,14 +149,15 @@ export default function FAQPage() {
 
       {/* Admin: Upload knowledge document */}
       {isAdmin && (
-        <section className="border rounded-lg p-4 space-y-4 mb-8">
+        <section className={sectionClass}>
           <h2 className="text-2xl font-semibold">Upload knowledge document</h2>
           <input
             type="file"
             accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
             onChange={handleFileSelect}
             disabled={uploading}
-            className="w-full border rounded px-3 py-2"
+            className="block w-full bg-transparent border border-gray-300 dark:border-gray-600
+                       rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
           {uploadError && <p className="text-red-500 text-sm">{uploadError}</p>}
           {uploading && <p className="text-sm">Uploading…</p>}
@@ -171,24 +166,26 @@ export default function FAQPage() {
 
       <ul className="space-y-4">
         {faqs.map(faq => (
-          <li key={faq.id} className="border rounded-lg overflow-hidden">
+          <li key={faq.id} className="rounded-xl overflow-hidden bg-white/70 dark:bg-gray-800/60
+                                     backdrop-blur ring-1 ring-gray-200 dark:ring-gray-700">
             <details className="group">
-              <summary className="cursor-pointer px-4 py-3 bg-gray-100 dark:bg-gray-800 font-medium group-open:rounded-b-none">
+              <summary className="flex items-center justify-between px-5 py-4 cursor-pointer
+                                  text-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                 {faq.question}
               </summary>
-              <div className="px-4 py-3 bg-white dark:bg-gray-900">
+              <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700">
                 {faq.answer}
                 {isAdmin && (
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={() => editFaq(faq)}
-                      className="px-3 py-1 rounded bg-yellow-400 text-black text-sm"
+                      className="px-3 py-1 rounded-md bg-yellow-400 text-black text-sm"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => removeFaq(faq.id)}
-                      className="px-3 py-1 rounded bg-red-600 text-white text-sm"
+                      className="px-3 py-1 rounded-md bg-red-600 text-white text-sm"
                     >
                       Delete
                     </button>
@@ -204,7 +201,7 @@ export default function FAQPage() {
       </ul>
 
       {/* Chat with Gemini */}
-      <section className="mt-12 border rounded-lg p-4 space-y-4">
+      <section className={`${sectionClass} mt-12`}>
         <h2 className="text-2xl font-semibold">Chat with Gemini</h2>
         <div className="max-h-80 overflow-y-auto space-y-2">
           {messages.map((m, idx) => (
@@ -256,13 +253,14 @@ export default function FAQPage() {
             value={input}
             onChange={e => setInput(e.target.value)}
             disabled={sending}
-            className="flex-grow border rounded px-3 py-2"
+            className="flex-grow bg-transparent border border-gray-300 dark:border-gray-600
+                       rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
             placeholder="Ask a question…"
           />
           <button
             type="submit"
             disabled={sending}
-            className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
+            className="px-4 py-2 rounded-md bg-sky-600 text-white disabled:opacity-50"
           >
             Send
           </button>
