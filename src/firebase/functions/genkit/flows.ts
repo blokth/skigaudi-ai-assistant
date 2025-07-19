@@ -5,6 +5,7 @@ import {
   textEmbedding005
 } from "@genkit-ai/vertexai";
 import { getFirestore } from "firebase-admin/firestore";
+import { faqEmbeddingIndexer } from "../faqIndexer";          // NEW
 
 // Vector search isn’t implemented in the Firestore emulator.
 // Force this process to talk to production so the retriever works.
@@ -101,6 +102,12 @@ const createFaq = ai.defineTool(
   },
   async ({ question, answer }) => {
     const ref = await getFirestore().collection("faqs").add({ question, answer });
+
+    // immediately vector-index so the new FAQ is searchable before the trigger runs
+    await faqEmbeddingIndexer({
+      data: { after: await ref.get() },
+    } as any);
+
     return `FAQ created with id ${ref.id}`;
   }
 );
@@ -117,10 +124,18 @@ const updateFaq = ai.defineTool(
     outputSchema: z.string(),
   },
   async ({ id, question, answer }) => {
+    const docRef = getFirestore().collection("faqs").doc(id);
     const data: Record<string, unknown> = {};
     if (question !== undefined) data.question = question;
     if (answer   !== undefined) data.answer   = answer;
-    await getFirestore().collection("faqs").doc(id).update(data);
+
+    await docRef.update(data);
+
+    // refresh embedding so retrieval sees the updated text
+    await faqEmbeddingIndexer({
+      data: { after: await docRef.get() },
+    } as any);
+
     return `FAQ ${id} updated.`;
   }
 );
@@ -137,6 +152,8 @@ const deleteFaq = ai.defineTool(
     return `FAQ ${id} deleted.`;
   }
 );
+
+export { createFaq, updateFaq, deleteFaq };      // NEW
 
 async function loadSystemPrompt(): Promise<string> {
   const snap = await getFirestore().doc("systemPrompts/chatPrompt").get();
