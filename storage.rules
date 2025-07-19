@@ -4,12 +4,11 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Knowledge documents: anyone can read, only admins can upload
+    // Knowledge documents: anyone can read, any authenticated (non-anonymous) user can upload
     match /knowledge/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null &&
-        firestore.exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        firestore.get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+        request.auth.token.firebase.sign_in_provider != "anonymous";
     }
 
     // Fallback – deny everything else
