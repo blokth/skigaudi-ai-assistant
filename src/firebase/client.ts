@@ -32,16 +32,12 @@ export const storage = getStorage(app);
 // Use emulator when requested
 if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true") {
   const fnPort = Number(process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_EMULATOR_PORT || 5003);
-  const fsPort = Number(process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_PORT || 8080);
   const authPort = Number(process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT || 9099);
 
   connectFunctionsEmulator(functions, "localhost", fnPort);
   const stPort = Number(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT || 9199);
   connectStorageEmulator(storage, "localhost", stPort);
-  // Vector search requires production Firestore; keep reads/writes there.
-  connectFirestoreEmulator(db, "localhost", fsPort);
+  // Vector search requires production Firestore; do NOT connect to the Firestore emulator.
   // Keep Auth on production when Firestore is on production.
-  // Using the Auth emulator here would send invalid tokens to production
-  // Firestore and trigger “Missing or insufficient permissions”.
-  connectAuthEmulator(auth, `http://localhost:${authPort}`, { disableWarnings: true });
+  // Auth emulator disabled to avoid invalid tokens against production Firestore.
 }
