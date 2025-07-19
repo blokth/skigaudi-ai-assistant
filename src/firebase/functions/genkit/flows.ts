@@ -26,7 +26,6 @@ if (!USE_LOCAL_VECTORSTORE && process.env.FIRESTORE_EMULATOR_HOST) {
 import { defineFirestoreRetriever } from "@genkit-ai/firebase";
 import { devLocalVectorstore, devLocalRetrieverRef } from "@genkit-ai/dev-local-vectorstore";
 import * as admin from "firebase-admin";
-import { getFirestore } from "firebase-admin/firestore";
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -180,7 +179,7 @@ const faqChatFlow = ai.defineFlow(
 
     // 2. expose CRUD tools only for authenticated non-anonymous users
     const isAdmin =
-      context.auth?.token?.firebase?.sign_in_provider !== "anonymous";
+      context?.auth?.token?.firebase?.sign_in_provider !== "anonymous";
     const tools   = isAdmin ? [createFaq, updateFaq, deleteFaq] : [];
 
     // 3. generate answer / handle tool-calls
