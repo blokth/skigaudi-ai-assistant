@@ -5,16 +5,7 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase
 import { ref, uploadBytes } from "firebase/storage";
 import { storage } from "@/firebase/client";
 import { useAuth } from "@/context/AuthContext";
-import { httpsCallable } from "firebase/functions";
-import { db, functions } from "@/firebase/client";
-import {
-  MainContainer,
-  ChatContainer,
-  MessageList,
-  Message,
-  MessageInput,
-} from "@chatscope/chat-ui-kit-react";
-import { MessageCircle } from "lucide-react";
+import { db } from "@/firebase/client";
 
 type FAQ = {
   id: string;
@@ -27,11 +18,6 @@ export default function FAQPage() {
 
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
-  const [messages, setMessages] = useState<
-    { author: "user" | "ai"; text: string }[]
-  >([]);
-  const [sending, setSending] = useState(false);
-  const [showChat, setShowChat] = useState(false);
 
   const [question, setQuestion] = useState("");
   const [answer, setAnswer]   = useState("");
@@ -114,22 +100,6 @@ export default function FAQPage() {
     }
   };
 
-  // Chat send handler
-  const handleSend = async (userText: string) => {
-    if (!userText.trim()) return;
-    setMessages(prev => [...prev, { author: "user", text: userText }]);
-    setSending(true);
-    try {
-      const callGemini = httpsCallable(functions, "faqChat");
-      const res = await callGemini(userText);
-      const result = res.data as string;
-      setMessages(prev => [...prev, { author: "ai", text: result }]);
-    } catch {
-      setMessages(prev => [...prev, { author: "ai", text: "Something went wrong." }]);
-    } finally {
-      setSending(false);
-    }
-  };
 
   if (loading || authLoading) {
     return (
@@ -225,41 +195,6 @@ export default function FAQPage() {
         )}
       </ul>
 
-      {/* floating chat button */}
-      <button
-        onClick={() => setShowChat(p => !p)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-sky-600
-                   text-white flex items-center justify-center shadow-lg"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </button>
-
-      {/* chat panel */}
-      {showChat && (
-        <div className="fixed bottom-24 right-6 z-50 w-72 md:w-96 h-[32rem]">
-          <MainContainer responsive>
-            <ChatContainer>
-              <MessageList>
-                {messages.map((m, i) => (
-                  <Message
-                    key={i}
-                    model={{
-                      message: m.text,
-                      direction: m.author === "user" ? "outgoing" : "incoming",
-                    }}
-                  />
-                ))}
-              </MessageList>
-              <MessageInput
-                placeholder="Ask a question…"
-                attachButton={false}
-                onSend={handleSend}
-                disabled={sending}
-              />
-            </ChatContainer>
-          </MainContainer>
-        </div>
-      )}
     </main>
   );
 }

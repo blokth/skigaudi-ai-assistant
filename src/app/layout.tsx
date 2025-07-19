@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import ChatWidget from "@/components/ChatWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <ChatWidget />
+        </AuthProvider>
       </body>
     </html>
   );
