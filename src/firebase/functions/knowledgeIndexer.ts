@@ -1,11 +1,9 @@
-import { onCallGenkit } from "firebase-functions/https";
-import { faqChatFlow, ai } from "./genkit/flows";
-import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { FieldValue } from "firebase-admin/firestore";
-import { textEmbedding005 } from "@genkit-ai/vertexai"
+import { textEmbedding005 } from "@genkit-ai/vertexai";
 import { devLocalIndexerRef } from "@genkit-ai/dev-local-vectorstore";
 import { Document } from "genkit/retriever";
+import { ai } from "./genkit/flows";
 import * as admin from "firebase-admin";
 import * as fs from "fs";
 import { tmpdir } from "os";
@@ -13,8 +11,6 @@ import { join } from "path";
 import pdfParse from "pdf-parse";
 
 if (!admin.apps.length) {
-  // Initialize the Admin SDK exactly once so that Storage and Firestore
-  // calls inside background functions work both locally and in production.
   admin.initializeApp();
 }
 
@@ -22,48 +18,9 @@ const USE_LOCAL_VECTORSTORE =
   process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true" ||
   !!process.env.FIRESTORE_EMULATOR_HOST;
 
-const faqDevIndexer = devLocalIndexerRef("faqs");
-
-export const faqChat = onCallGenkit({ region: "us-central1" }, faqChatFlow);
-
-// Keep FAQ docs vectorised
-const faqEmbeddingIndexerLegacy = onDocumentWritten(
-  { document: "faqs/{docId}", region: "us-central1" },
-  async event => {
-    const afterSnap = event.data?.after;
-    if (!afterSnap) return;
-    const data = afterSnap.data();
-    if (!data) return;
-
-    const embedding =
-      (await ai.embed({
-        embedder: textEmbedding005,
-        content: `${data.question}\n${data.answer}`,
-      }))[0].embedding;
-
-    if (USE_LOCAL_VECTORSTORE) {
-      const document = Document.fromText(
-        `${data.question}\n${data.answer}`,
-        { id: afterSnap.id, question: data.question }
-      );
-      await ai.index({
-        indexer: faqDevIndexer,
-        documents: [document],
-      });
-    } else {
-      await afterSnap.ref.update({
-        embedding: FieldValue.vector(embedding),
-      });
-    }
-  }
-);
-
-export { faqEmbeddingIndexer } from "./faqIndexer";
-export { knowledgeDocIndexer } from "./knowledgeIndexer";
-
 const knowledgeDevIndexer = devLocalIndexerRef("knowledge");
 
-const knowledgeDocIndexerLegacy = onObjectFinalized(
+export const knowledgeDocIndexer = onObjectFinalized(
   { region: "us-central1" },
   async event => {
     const object = event.data;
@@ -93,7 +50,7 @@ const knowledgeDocIndexerLegacy = onObjectFinalized(
         text = fs.readFileSync(tempPath, "utf8");
       }
     } finally {
-      fs.unlink(tempPath, () => { });
+      fs.unlink(tempPath, () => {});
     }
 
     if (!text.trim()) return;
