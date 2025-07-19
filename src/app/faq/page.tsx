@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { ref, uploadBytes } from "firebase/storage";
+import { storage } from "@/firebase/client";
+import { useAuth } from "@/context/AuthContext";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "@/firebase/client";
 
@@ -12,6 +15,8 @@ type FAQ = {
 };
 
 export default function FAQPage() {
+  const { user, isAdmin, loading: authLoading } = useAuth();
+
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<
@@ -19,6 +24,13 @@ export default function FAQPage() {
   >([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer]   = useState("");
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState("");
+  const [uploading, setUploading]   = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -33,7 +45,75 @@ export default function FAQPage() {
     })();
   }, []);
 
-  if (loading) {
+  // admin helpers
+  const loadFaqs = async () => {
+    const snap = await getDocs(collection(db, "faqs"));
+    setFaqs(
+      snap.docs.map(d => ({
+        id: d.id,
+        ...(d.data() as Omit<FAQ, "id">),
+      }))
+    );
+  };
+
+  const createFaq = async () => {
+    if (!question.trim() || !answer.trim()) return;
+    setSaving(true);
+    await addDoc(collection(db, "faqs"), { question, answer });
+    setQuestion("");
+    setAnswer("");
+    await loadFaqs();
+    setSaving(false);
+  };
+
+  const editFaq = async (faq: FAQ) => {
+    const q = prompt("Question:", faq.question);
+    if (q == null) return;
+    const a = prompt("Answer:", faq.answer);
+    if (a == null) return;
+    setSaving(true);
+    await updateDoc(doc(db, "faqs", faq.id), { question: q, answer: a });
+    await loadFaqs();
+    setSaving(false);
+  };
+
+  const removeFaq = async (id: string) => {
+    if (!confirm("Delete this FAQ?")) return;
+    setSaving(true);
+    await deleteDoc(doc(db, "faqs", id));
+    await loadFaqs();
+    setSaving(false);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // accept only PDF, TXT or MD
+    if (
+      !["application/pdf", "text/plain", "text/markdown"].includes(file.type) &&
+      !/\.(pdf|txt|md)$/i.test(file.name)
+    ) {
+      setUploadError("Unsupported file type.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError("");
+    try {
+      const storageRef = ref(storage, `knowledge/${file.name}`);
+      await uploadBytes(storageRef, file);
+      alert("File uploaded successfully and will be processed shortly.");
+    } catch (err) {
+      console.error(err);
+      setUploadError("Upload failed.");
+    } finally {
+      setUploading(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  if (loading || authLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
         Loading…
@@ -44,6 +124,51 @@ export default function FAQPage() {
   return (
     <main className="min-h-screen px-4 py-10 max-w-3xl mx-auto">
       <h1 className="text-4xl font-bold mb-8">Frequently Asked Questions</h1>
+
+      {/* Admin: Add new FAQ */}
+      {isAdmin && (
+        <section className="border rounded-lg p-4 space-y-4 mb-8">
+          <h2 className="text-2xl font-semibold">Add new FAQ</h2>
+          <input
+            type="text"
+            placeholder="Question"
+            value={question}
+            onChange={e => setQuestion(e.target.value)}
+            className="w-full border rounded px-3 py-2"
+          />
+          <textarea
+            placeholder="Answer"
+            value={answer}
+            onChange={e => setAnswer(e.target.value)}
+            className="w-full border rounded px-3 py-2 h-24"
+          />
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          <button
+            onClick={createFaq}
+            disabled={saving}
+            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </section>
+      )}
+
+      {/* Admin: Upload knowledge document */}
+      {isAdmin && (
+        <section className="border rounded-lg p-4 space-y-4 mb-8">
+          <h2 className="text-2xl font-semibold">Upload knowledge document</h2>
+          <input
+            type="file"
+            accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
+            onChange={handleFileSelect}
+            disabled={uploading}
+            className="w-full border rounded px-3 py-2"
+          />
+          {uploadError && <p className="text-red-500 text-sm">{uploadError}</p>}
+          {uploading && <p className="text-sm">Uploading…</p>}
+        </section>
+      )}
+
       <ul className="space-y-4">
         {faqs.map(faq => (
           <li key={faq.id} className="border rounded-lg overflow-hidden">
@@ -53,6 +178,22 @@ export default function FAQPage() {
               </summary>
               <div className="px-4 py-3 bg-white dark:bg-gray-900">
                 {faq.answer}
+                {isAdmin && (
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => editFaq(faq)}
+                      className="px-3 py-1 rounded bg-yellow-400 text-black text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => removeFaq(faq.id)}
+                      className="px-3 py-1 rounded bg-red-600 text-white text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
             </details>
           </li>
