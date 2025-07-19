@@ -16,8 +16,8 @@ import { cn } from "@/lib/utils";
 type ChatMsg = { author: "user" | "ai"; text: string };
 
 export default function ChatWidget() {
-  const [open, setOpen]       = useState(false);
-  const [messages, setMsgs]   = useState<ChatMsg[]>([]);
+  const [open, setOpen] = useState(false);
+  const [messages, setMsgs] = useState<ChatMsg[]>([]);
   const [sending, setSending] = useState(false);
 
   const handleSend = async (text: string) => {
@@ -65,6 +65,7 @@ export default function ChatWidget() {
                   <Message
                     key={i}
                     model={{
+                      position: "normal",
                       message: m.text,
                       direction: m.author === "user" ? "outgoing" : "incoming"
                     }}
