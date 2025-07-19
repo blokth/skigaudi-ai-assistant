@@ -84,7 +84,7 @@ export const knowledgeDocIndexer = onObjectFinalized(
         text = fs.readFileSync(tempPath, "utf8");
       }
     } finally {
-      fs.unlink(tempPath, () => {});
+      fs.unlink(tempPath, () => { });
     }
 
     if (!text.trim()) return;
