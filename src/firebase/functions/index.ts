@@ -1,4 +1,4 @@
-import { onCallGenkit } from "firebase-functions/https";
+import { onCallGenkit } from "firebase-functions/v2/genkit";
 import { faqChatFlow, ai } from "./genkit/flows";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";
@@ -12,7 +12,7 @@ const USE_LOCAL_VECTORSTORE =
 
 const faqDevIndexer = devLocalIndexerRef("faqs");
 
-export const faqChat = onCallGenkit({}, faqChatFlow);
+export const faqChat = onCallGenkit({ region: "us-central1" }, faqChatFlow);
 
 // Keep FAQ docs vectorised
 export const faqEmbeddingIndexer = onDocumentWritten(
