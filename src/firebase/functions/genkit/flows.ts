@@ -98,11 +98,17 @@ const faqChatFlow = ai.defineFlow(
   },
   async (question, { sendChunk }) => {
     // 1. retrieve nearest FAQs and knowledge docs via vector search
-    const docs = await ai.retrieve({
-      retriever: [faqRetriever, knowledgeRetriever],
+    const faqDocs = await ai.retrieve({
+      retriever: faqRetriever,
       query: question,
-      options: { k: 8 },
+      options: { k: 4 },
     });
+    const knowledgeDocs = await ai.retrieve({
+      retriever: knowledgeRetriever,
+      query: question,
+      options: { k: 4 },
+    });
+    const docs = [...faqDocs, ...knowledgeDocs];
 
     // 2. generate the answer, passing the retrieved docs as context
     const { response, stream } = ai.generateStream({
