@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc,
+         getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
 import { storage } from "@/firebase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -25,11 +26,14 @@ export default function FAQPage() {
   const [uploading, setUploading]   = useState(false);
   const [uploadError, setUploadError] = useState("");
 
+  const [sysPrompt, setSysPrompt]   = useState("");
+  const [sysSaving, setSysSaving]   = useState(false);
+
   const sectionClass =
     "mb-8 space-y-4 p-6 rounded-xl bg-white/60 dark:bg-gray-800/50 " +
     "backdrop-blur ring-1 ring-gray-200 dark:ring-gray-700";
 
-  useEffect(() => { loadFaqs(); }, []);
+  useEffect(() => { loadFaqs(); loadSysPrompt(); }, []);
 
   // admin helpers
   const loadFaqs = async () => {
@@ -41,6 +45,20 @@ export default function FAQPage() {
       }))
     );
     setLoading(false);
+  };
+
+  const loadSysPrompt = async () => {
+    const snap = await getDoc(doc(db, "systemPrompts", "chatPrompt"));
+    setSysPrompt(snap.exists() ? (snap.data() as any).content : "");
+  };
+
+  const saveSysPrompt = async () => {
+    if (!isAdmin) return;
+    setSysSaving(true);
+    await setDoc(doc(db, "systemPrompts", "chatPrompt"),
+      { content: sysPrompt, updatedAt: serverTimestamp() });
+    setSysSaving(false);
+    alert("System prompt saved");
   };
 
   const createFaq = async () => {
@@ -112,6 +130,26 @@ export default function FAQPage() {
   return (
     <main className="min-h-screen px-4 py-10 max-w-3xl mx-auto">
       <h1 className="text-4xl font-bold mb-8">Frequently Asked Questions</h1>
+
+      {/* Admin: Edit system prompt */}
+      {isAdmin && (
+        <section className={sectionClass}>
+          <h2 className="text-2xl font-semibold">System prompt</h2>
+          <textarea
+            value={sysPrompt}
+            onChange={e => setSysPrompt(e.target.value)}
+            className="block w-full bg-transparent border border-gray-300 dark:border-gray-600
+                       rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500 h-32"
+          />
+          <button
+            onClick={saveSysPrompt}
+            disabled={sysSaving}
+            className="px-4 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-500 disabled:opacity-50"
+          >
+            {sysSaving ? "Saving…" : "Save prompt"}
+          </button>
+        </section>
+      )}
 
       {/* Admin: Add new FAQ */}
       {isAdmin && (

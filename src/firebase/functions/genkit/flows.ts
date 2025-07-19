@@ -4,6 +4,7 @@ import {
   gemini20Flash,
   textEmbedding005
 } from "@genkit-ai/vertexai";
+import { getFirestore } from "firebase-admin/firestore";
 
 // Vector search isn’t implemented in the Firestore emulator.
 // Force this process to talk to production so the retriever works.
@@ -87,6 +88,61 @@ const knowledgeRetriever = USE_LOCAL_VECTORSTORE
     });
 export { knowledgeRetriever };
 
+/* ─────────────  FAQ CRUD tools ───────────── */
+const createFaq = ai.defineTool(
+  {
+    name: "createFaq",
+    description: "Create a new FAQ entry.",
+    inputSchema: z.object({
+      question: z.string().describe("The FAQ question"),
+      answer:   z.string().describe("The answer"),
+    }),
+    outputSchema: z.string(),
+  },
+  async ({ question, answer }) => {
+    const ref = await getFirestore().collection("faqs").add({ question, answer });
+    return `FAQ created with id ${ref.id}`;
+  }
+);
+
+const updateFaq = ai.defineTool(
+  {
+    name: "updateFaq",
+    description: "Update an existing FAQ entry.",
+    inputSchema: z.object({
+      id:       z.string().describe("Firestore document id"),
+      question: z.string().optional(),
+      answer:   z.string().optional(),
+    }),
+    outputSchema: z.string(),
+  },
+  async ({ id, question, answer }) => {
+    const data: Record<string, unknown> = {};
+    if (question !== undefined) data.question = question;
+    if (answer   !== undefined) data.answer   = answer;
+    await getFirestore().collection("faqs").doc(id).update(data);
+    return `FAQ ${id} updated.`;
+  }
+);
+
+const deleteFaq = ai.defineTool(
+  {
+    name: "deleteFaq",
+    description: "Delete an FAQ entry.",
+    inputSchema: z.object({ id: z.string() }),
+    outputSchema: z.string(),
+  },
+  async ({ id }) => {
+    await getFirestore().collection("faqs").doc(id).delete();
+    return `FAQ ${id} deleted.`;
+  }
+);
+
+async function loadSystemPrompt(): Promise<string> {
+  const snap = await getFirestore().doc("systemPrompts/chatPrompt").get();
+  return (snap.data()?.content ?? "").trim();
+}
+
 const faqChatFlow = ai.defineFlow(
   {
     name: "faqChatFlow",
@@ -96,30 +152,31 @@ const faqChatFlow = ai.defineFlow(
     outputSchema: z.string(),
     streamSchema: z.string(),
   },
-  async (question, { sendChunk }) => {
-    // 1. retrieve nearest FAQs and knowledge docs via vector search
-    const faqDocs = await ai.retrieve({
-      retriever: faqRetriever,
-      query: question,
-      options: { k: 4 },
-    });
-    const knowledgeDocs = await ai.retrieve({
-      retriever: knowledgeRetriever,
-      query: question,
-      options: { k: 4 },
-    });
+  async (question, { sendChunk, context }) => {
+    // 0. get dynamic system-prompt
+    const systemPrompt = await loadSystemPrompt();
+
+    // 1. vector-retrieve context docs
+    const faqDocs = await ai.retrieve({ retriever: faqRetriever, query: question, options: { k: 4 } });
+    const knowledgeDocs = await ai.retrieve({ retriever: knowledgeRetriever, query: question, options: { k: 4 } });
     const docs = [...faqDocs, ...knowledgeDocs];
 
-    // 2. generate the answer, passing the retrieved docs as context
+    // 2. expose CRUD tools only for admins
+    const isAdmin = !!context.auth?.token?.admin;
+    const tools   = isAdmin ? [createFaq, updateFaq, deleteFaq] : [];
+
+    // 3. generate answer / handle tool-calls
     const { response, stream } = ai.generateStream({
       model: gemini20Flash,
-      prompt: `You are the helpful assistant for the SkiGaudi student winter festival.
-Use the provided FAQ answers and knowledge documents as context to answer the question.
+      prompt: `${systemPrompt || "You are the helpful assistant for the SkiGaudi student winter festival."}
+Use the provided FAQ answers and knowledge documents as context to answer or act.
 If the answer isn't covered, reply that you don't have enough information.
 Question: ${question}`,
-      docs,                       // <- RAG context exactly as in the guide
+      docs,
+      tools,
       config: { temperature: 0.8 },
     });
+
     for await (const chunk of stream) sendChunk(chunk.text);
     return (await response).text;
   }
