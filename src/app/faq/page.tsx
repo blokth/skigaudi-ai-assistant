@@ -7,6 +7,14 @@ import { storage } from "@/firebase/client";
 import { useAuth } from "@/context/AuthContext";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "@/firebase/client";
+import {
+  MainContainer,
+  ChatContainer,
+  MessageList,
+  Message,
+  MessageInput,
+} from "@chatscope/chat-ui-kit-react";
+import { MessageCircle } from "lucide-react";
 
 type FAQ = {
   id: string;
@@ -22,8 +30,8 @@ export default function FAQPage() {
   const [messages, setMessages] = useState<
     { author: "user" | "ai"; text: string }[]
   >([]);
-  const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const [question, setQuestion] = useState("");
   const [answer, setAnswer]   = useState("");
@@ -103,6 +111,23 @@ export default function FAQPage() {
     } finally {
       setUploading(false);
       if (e.target) e.target.value = "";
+    }
+  };
+
+  // Chat send handler
+  const handleSend = async (userText: string) => {
+    if (!userText.trim()) return;
+    setMessages(prev => [...prev, { author: "user", text: userText }]);
+    setSending(true);
+    try {
+      const callGemini = httpsCallable(functions, "faqChat");
+      const res = await callGemini(userText);
+      const result = res.data as string;
+      setMessages(prev => [...prev, { author: "ai", text: result }]);
+    } catch {
+      setMessages(prev => [...prev, { author: "ai", text: "Something went wrong." }]);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -200,72 +225,41 @@ export default function FAQPage() {
         )}
       </ul>
 
-      {/* Chat with Gemini */}
-      <section className={`${sectionClass} mt-12`}>
-        <h2 className="text-2xl font-semibold">Chat with Gemini</h2>
-        <div className="max-h-80 overflow-y-auto space-y-2">
-          {messages.map((m, idx) => (
-            <p
-              key={idx}
-              className={m.author === "user" ? "text-right" : "text-left"}
-            >
-              <span
-                className={`inline-block px-3 py-2 rounded-lg ${
-                  m.author === "user"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-800"
-                }`}
-              >
-                {m.text}
-              </span>
-            </p>
-          ))}
+      {/* floating chat button */}
+      <button
+        onClick={() => setShowChat(p => !p)}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-sky-600
+                   text-white flex items-center justify-center shadow-lg"
+      >
+        <MessageCircle className="w-6 h-6" />
+      </button>
+
+      {/* chat panel */}
+      {showChat && (
+        <div className="fixed bottom-24 right-6 z-50 w-72 md:w-96 h-[32rem]">
+          <MainContainer responsive>
+            <ChatContainer>
+              <MessageList>
+                {messages.map((m, i) => (
+                  <Message
+                    key={i}
+                    model={{
+                      message: m.text,
+                      direction: m.author === "user" ? "outgoing" : "incoming",
+                    }}
+                  />
+                ))}
+              </MessageList>
+              <MessageInput
+                placeholder="Ask a question…"
+                attachButton={false}
+                onSend={handleSend}
+                disabled={sending}
+              />
+            </ChatContainer>
+          </MainContainer>
         </div>
-        <form
-          onSubmit={async e => {
-            e.preventDefault();
-            if (!input.trim()) return;
-            const userText = input;
-            setMessages(prev => [...prev, { author: "user", text: userText }]);
-            setInput("");
-            setSending(true);
-            try {
-              const callGemini = httpsCallable(functions, "faqChat");
-              const res = await callGemini(userText);       // param is the question string
-              const result = res.data as string;
-              setMessages(prev => [
-                ...prev,
-                { author: "ai", text: result },
-              ]);
-            } catch (err) {
-              setMessages(prev => [
-                ...prev,
-                { author: "ai", text: "Something went wrong." },
-              ]);
-            } finally {
-              setSending(false);
-            }
-          }}
-          className="flex gap-2"
-        >
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            disabled={sending}
-            className="flex-grow bg-transparent border border-gray-300 dark:border-gray-600
-                       rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
-            placeholder="Ask a question…"
-          />
-          <button
-            type="submit"
-            disabled={sending}
-            className="px-4 py-2 rounded-md bg-sky-600 text-white disabled:opacity-50"
-          >
-            Send
-          </button>
-        </form>
-      </section>
+      )}
     </main>
   );
 }
