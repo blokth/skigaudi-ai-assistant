@@ -12,6 +12,12 @@ import { tmpdir } from "os";
 import { join } from "path";
 import pdfParse from "pdf-parse";
 
+if (!admin.apps.length) {
+  // Initialize the Admin SDK exactly once so that Storage and Firestore
+  // calls inside background functions work both locally and in production.
+  admin.initializeApp();
+}
+
 const USE_LOCAL_VECTORSTORE =
   process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true" ||
   !!process.env.FIRESTORE_EMULATOR_HOST;
