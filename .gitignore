@@ -11,7 +11,7 @@ firebase-debug.*.log*
 
 src/firebase/functions/.genkit/
 src/firebase/functions/lib/
-__db_faqs*
+__db_*
 
 # Firebase cache
 .firebase/
