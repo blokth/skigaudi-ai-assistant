@@ -9,6 +9,7 @@ import * as fs from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import pdfParse from "pdf-parse";
+import { chunk as chunkText } from "llm-chunk";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -55,34 +56,51 @@ export const knowledgeDocIndexer = onObjectFinalized(
 
     if (!text.trim()) return;
 
-    const embedding =
-      (await ai.embed({
-        embedder: textEmbedding005,
-        content: text,
-      }))[0].embedding;
+    // Split the document into smaller overlapping chunks for higher-quality retrieval.
+    const chunks: string[] = chunkText(text, {
+      minLength: 800,
+      maxLength: 1500,
+      overlap: 200,
+      splitter: "sentence",
+    });
+
+    // Embed each chunk
+    const embedResults = await ai.embed({
+      embedder: textEmbedding005,
+      content: chunks,
+    });
 
     if (USE_LOCAL_VECTORSTORE) {
-      const document = Document.fromText(text, {
-        id: filePath,
-        title: filePath.split("/").pop(),
-      });
+      const documents = chunks.map((chunk, idx) =>
+        Document.fromText(chunk, {
+          id: `${filePath}#${idx}`,
+          title: filePath.split("/").pop(),
+          filePath,
+          chunk: idx,
+        })
+      );
       await ai.index({
         indexer: knowledgeDevIndexer,
-        documents: [document],
+        documents,
       });
     } else {
-      await admin
-        .firestore()
-        .collection("knowledge")
-        .doc(filePath.replace(/\//g, "__"))
-        .set(
+      const batch = admin.firestore().batch();
+      chunks.forEach((chunk, idx) => {
+        const docRef = admin
+          .firestore()
+          .collection("knowledge")
+          .doc(filePath.replace(/\//g, "__") + `__${idx}`);
+        batch.set(
+          docRef,
           {
             title: filePath.split("/").pop(),
-            content: text,
-            embedding: FieldValue.vector(embedding),
+            content: chunk,
+            embedding: FieldValue.vector(embedResults[idx].embedding),
           },
           { merge: true }
         );
+      });
+      await batch.commit();
     }
   }
 );
