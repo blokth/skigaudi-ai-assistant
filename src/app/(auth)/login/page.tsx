@@ -15,7 +15,7 @@ export default function AdminLogin() {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, pw);
-      router.replace("/");          // change to /admin if wanted
+      router.replace("/faq");
     } catch (err: any) {
       setError(err.message);
     }

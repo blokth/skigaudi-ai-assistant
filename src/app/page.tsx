@@ -15,7 +15,7 @@ export default function Landing() {
 
   const anonLogin = async () => {
     await signInAnonymously(auth);
-    router.push("/"); // TODO: route to main app
+    router.push("/faq");
   };
 
   return (
