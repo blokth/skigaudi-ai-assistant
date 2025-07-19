@@ -57,11 +57,10 @@ export const knowledgeDocIndexer = onObjectFinalized(
       splitter: "sentence",
     });
 
-    // Embed each chunk
-    const embedResults = await ai.embed({
-      embedder: textEmbedding005,
-      content: chunks,
-    });
+    // Embed each chunk – `ai.embed` expects a single string, so loop
+    const embedResults = await Promise.all(
+      chunks.map(async c => (await ai.embed({ embedder: textEmbedding005, content: c }))[0].embedding)
+    );
 
     const batch = admin.firestore().batch();
       chunks.forEach((chunk, idx) => {
@@ -74,7 +73,7 @@ export const knowledgeDocIndexer = onObjectFinalized(
           {
             title: filePath.split("/").pop(),
             content: chunk,
-            embedding: FieldValue.vector(embedResults[idx].embedding),
+            embedding: FieldValue.vector(embedResults[idx]),
           },
           { merge: true }
         );
