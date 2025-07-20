@@ -1,7 +1,7 @@
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { FieldValue } from "firebase-admin/firestore";
 import { textEmbedding005 } from "@genkit-ai/vertexai";
-import { ai } from "./genkit/flows";
+import { ai } from "./genkit/core";
 import * as admin from "firebase-admin";
 import * as fs from "fs";
 import { tmpdir } from "os";

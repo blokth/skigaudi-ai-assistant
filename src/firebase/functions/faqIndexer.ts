@@ -3,7 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { textEmbedding005 } from "@genkit-ai/vertexai";
 import { devLocalIndexerRef } from "@genkit-ai/dev-local-vectorstore";
 import { Document } from "genkit/retriever";
-import { ai } from "./genkit/flows";
+import { ai } from "./genkit/core";
 import * as admin from "firebase-admin";
 
 if (!admin.apps.length) {
