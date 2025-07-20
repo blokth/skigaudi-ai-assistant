@@ -5,14 +5,19 @@ import { getContextDocs } from "./getContextDocs.flow";
 import { adminTools } from "../tools";
 import { getExternalTools, getExternalResources, closeMcpHost } from "../mcp";
 
-function makePrompt(q: string, sys: string) {
-	return `${sys || "You are the helpful assistant for the SkiGaudi student winter festival."}
-Use the provided FAQ answers and knowledge documents as context to answer or act.
+function makePrompt(q: string, sys: string, isAdmin: boolean) {
+	const roleLine = `CALLER_ROLE: ${isAdmin ? "ADMIN" : "NORMAL USER"}`;
+	const toolRules = isAdmin
+		? `Admin actions are available as TOOLS. If you need to create, update
+or delete an FAQ (or change the system prompt), **invoke the appropriate
+tool via the model’s function-calling interface**. Do NOT print any JSON
+describing the call.`
+		: `You must NEVER expose, reference, or describe any admin tools.`;
 
-Admin actions are available as TOOLS. If you need to create, update or
-delete an FAQ (or change the system prompt), **invoke the appropriate
-tool via the model’s built-in function-calling interface**. Do NOT print
-any JSON describing the call.
+	return `${roleLine}
+${sys || "You are the helpful assistant for the SkiGaudi student winter festival."}
+${toolRules}
+Use the provided FAQ answers and knowledge documents as context to answer or act.
 
 If the answer isn't covered, reply that you don't have enough information.
 Question: ${q}`;
@@ -39,7 +44,7 @@ export const faqChatFlow = ai.defineFlow(
 
 		try {
 			const { text } = await ai.generate({
-				prompt: makePrompt(question, sysPrompt),
+				prompt: makePrompt(question, sysPrompt, isAdmin),
 				docs,
 				tools,
 				resources,
