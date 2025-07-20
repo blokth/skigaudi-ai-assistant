@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { signInAnonymously } from "firebase/auth";
 import { auth } from "@/firebase/client";
@@ -16,12 +18,14 @@ export default function Landing() {
 	return (
 		<main className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-sky-200 via-violet-200 to-fuchsia-200 text-gray-900">
 			{/* ADMIN – top-right */}
-			<button
-				onClick={() => router.push("/login")}
-				className="absolute top-6 right-6 md:top-8 md:right-8 px-4 py-2 text-sm font-semibold border border-gray-800 dark:border-white rounded-md bg-white/70 backdrop-blur-md hover:bg-white transition text-gray-800 dark:text-white"
+			<Button
+				asChild
+				variant="secondary"
+				size="sm"
+				className="absolute top-6 right-6 md:top-8 md:right-8"
 			>
-				Admin login
-			</button>
+				<Link href="/login">Admin&nbsp;login</Link>
+			</Button>
 			{/* halftone dots */}
 			<div
 				className="absolute inset-0 pointer-events-none opacity-40"
@@ -68,12 +72,13 @@ export default function Landing() {
 				</ul>
 
 				{/* WELCOME BUTTON */}
-				<button
+				<Button
 					onClick={anonLogin}
-					className="px-10 py-4 rounded-lg bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-300 transition shadow-lg"
+					size="lg"
+					className="px-10 py-4 shadow-lg"
 				>
 					Welcome
-				</button>
+				</Button>
 			</div>
 		</main>
 	);

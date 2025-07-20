@@ -143,8 +143,8 @@ export default function FAQPage() {
 	}
 
 	return (
-		<main className="min-h-screen px-4 py-10 max-w-3xl mx-auto">
-			<h1 className="text-4xl font-bold mb-8">Frequently Asked Questions</h1>
+		<main className="min-h-screen container px-4 py-10">
+			<h1 className="text-4xl font-bold mb-10">Frequently Asked Questions</h1>
 
 			{/* Admin: Edit system prompt */}
 			{isAdmin && (
