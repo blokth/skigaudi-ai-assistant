@@ -1,5 +1,4 @@
 import { z } from "genkit";
-import { gemini20Flash } from "@genkit-ai/vertexai";
 import { ai } from "../core";
 import { loadSystemPrompt } from "../prompt";
 import { getContextDocs } from "./getContextDocs.flow";
@@ -31,29 +30,15 @@ export const faqChatFlow = ai.defineFlow(
 			context?.auth?.token?.firebase?.sign_in_provider !== "anonymous";
 		const tools = [...extTools, ...(isAdmin ? adminTools : [])];
 
-		const toolMap = Object.fromEntries(
-			tools.map((t) => [t.name, t] as const),
-		);
 
 		try {
-			const { response } = await ai.generateStream({
-				model: gemini20Flash,
+			const { text } = await ai.generate({
 				prompt: makePrompt(question, sysPrompt),
 				docs,
 				tools,
 				resources,
 				config: { temperature: 0.8 },
-				toolExecutor: async ({ name, args }: { name: string; args: any }) => {
-					const tool = toolMap[name];
-					if (!tool) throw new Error(`Unknown tool: ${name}`);
-					// run the tool and hand its result back to Genkit
-					// (tool typings vary, so suppress if necessary)
-					// @ts-ignore
-					return await tool(args);
-				},
 			});
-
-			const { text } = await response;
 			return text;
 		} finally {
 			await closeMcpHost();
