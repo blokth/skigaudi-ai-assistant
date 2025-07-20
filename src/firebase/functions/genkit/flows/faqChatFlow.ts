@@ -31,6 +31,9 @@ export const faqChatFlow = ai.defineFlow(
 			context?.auth?.token?.firebase?.sign_in_provider !== "anonymous";
 		const tools = [...extTools, ...(isAdmin ? adminTools : [])];
 
+		// Create a lookup helper for tools by name
+		const toolMap = Object.fromEntries(tools.map((t) => [t.name, t]));
+
 		try {
 			const { stream, response } = ai.generateStream({
 				model: gemini20Flash,
@@ -39,8 +42,17 @@ export const faqChatFlow = ai.defineFlow(
 				tools,
 				resources,
 				config: { temperature: 0.8 },
+
+				// NEW ─ auto-execute every recognised tool call
+				toolExecutor: async ({ name, args }) => {
+					const tool = toolMap[name];
+					if (!tool) throw new Error(`Unknown tool: ${name}`);
+					return await tool(args); // executes the tool and returns its output
+				},
 			});
-			for await (const c of stream) sendChunk(c.text);
+			for await (const chunk of stream) {
+				if (chunk.type === "text") sendChunk(chunk.text);
+			}
 			return (await response).text;
 		} finally {
 			await closeMcpHost();
