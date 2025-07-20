@@ -7,12 +7,15 @@ import { getExternalTools, getExternalResources, closeMcpHost } from "../mcp";
 function buildSystemPrompt(sys: string, isAdmin: boolean) {
 	const roleLine = `CALLER_ROLE: ${isAdmin ? "ADMIN" : "NORMAL USER"}`;
 	const toolRules = isAdmin
-		? `Admin actions are available as TOOLS. If you need to create, update
-or delete an FAQ (or change the system prompt), **invoke the appropriate
-tool via the model’s function-calling interface**. Do NOT print any JSON
-describing the call.`
+		? `ADMIN DIRECTIVE – READ FIRST:
+When the user explicitly asks to create, update, or delete an FAQ
+  • ALWAYS call the matching tool (createFaq, updateFaq, deleteFaq)
+    via the model’s function-calling / function-calling interface.
+  • Do NOT output JSON or natural-language explanations before or
+    after the call. Simply invoke the tool.`
 		: `You must NEVER expose, reference, or describe any admin tools.`;
 
+	// place our rules *after* the stored prompt so they override it
 	return `${roleLine}
 ${sys || "You are the helpful assistant for the SkiGaudi student winter festival."}
 ${toolRules}
