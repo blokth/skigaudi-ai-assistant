@@ -21,12 +21,18 @@ export default function Landing() {
 		<main className="relative overflow-hidden min-h-screen flex items-center justify-center text-white px-4">
 			<video
 				aria-hidden="true"
-				className="fixed inset-0 w-screen h-screen object-cover brightness-75 -z-10"
+				className="fixed inset-0 w-screen h-screen object-cover brightness-50 -z-20"
 				autoPlay
 				loop
 				muted
 				playsInline
 				src={videoUrl}
+			/>
+
+			{/* extra dimming layer */}
+			<div
+				aria-hidden="true"
+				className="fixed inset-0 bg-black/40 -z-10 pointer-events-none"
 			/>
 
 			<div className="relative z-10 flex flex-col items-center gap-14 px-6">
