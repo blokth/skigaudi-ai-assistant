@@ -9,7 +9,12 @@ import { useAuth } from "@/context/AuthContext";
 import { functions, storage } from "@/firebase/client";
 import { cn } from "@/lib/utils";
 
-type ChatMsg = { id: string; author: "user" | "ai"; text: string };
+type ChatMsg = {
+  id: string;
+  author: "user" | "ai";
+  text?: string;              // normal text message
+  attachmentName?: string;    // when an uploaded file should be shown
+};
 
 export default function ChatWidget() {
 	const [open, setOpen] = useState(false);
@@ -34,6 +39,16 @@ export default function ChatWidget() {
 	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
+
+		// show the attachment in the chat UI
+		setMsgs((p) => [
+		  ...p,
+		  {
+			id: crypto.randomUUID(),
+			author: "user",
+			attachmentName: file.name,
+		  },
+		]);
 
 		// accept only PDF, TXT or MD
 		if (
@@ -123,7 +138,14 @@ export default function ChatWidget() {
 						   : "mr-auto bg-secondary text-secondary-foreground",
 					   )}
 					 >
-					   {m.text}
+					   {m.attachmentName ? (
+						 <div className="inline-flex items-center gap-2">
+						   <Paperclip className="size-4 shrink-0" />
+						   <span className="break-all">{m.attachmentName}</span>
+						 </div>
+					   ) : (
+						 m.text
+					   )}
 					 </div>
 				   ))}
 				   <div ref={messagesEndRef} />
