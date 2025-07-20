@@ -20,10 +20,8 @@ export async function renderSystemPrompt(
 
   // 2) fall back to repo default
   if (!txt) {
-    const fp = path.join(
-      __dirname,
-      "@/prompts/faqSystem.prompt", // adjust only if you move the prompt dir
-    );
+    // points from  …/lib/genkit  →  …/prompts/faqSystem.prompt
+    const fp = path.resolve(__dirname, "..", "..", "prompts", "faqSystem.prompt");
     txt = readFileSync(fp, "utf8").trim();
   }
 
