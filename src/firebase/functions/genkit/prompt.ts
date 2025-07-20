@@ -1,12 +1,18 @@
+import Handlebars from "handlebars";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { getFirestore } from "firebase-admin/firestore";
 
-let cache: { ts: number; txt: string } | null = null;
+let cache: { ts: number; template: Handlebars.TemplateDelegate } | null = null;
 const TTL = 30_000;
 
-export async function loadSystemPrompt(): Promise<string> {
-  if (cache && Date.now() - cache.ts < TTL) return cache.txt;
+// change export name
+export async function renderSystemPrompt(
+  vars: { callerRole: string; toolRules: string; contextDocs?: string },
+): Promise<string> {
+  if (cache && Date.now() - cache.ts < TTL && cache.template) {
+    return cache.template(vars);
+  }
 
   // 1) try Firestore override
   const snap = await getFirestore().doc("systemPrompts/chatPrompt").get();
@@ -27,13 +33,16 @@ export async function loadSystemPrompt(): Promise<string> {
       "System prompt must be valid .prompt content (missing YAML front-matter).",
     );
 
-  // 4) strip front-matter, return only the template body
+  // After obtaining `txt` (the full .prompt file contents) …
   const secondDash = txt.indexOf("---", 3);
-  if (secondDash === -1)
-    throw new Error("Malformed .prompt file – closing '---' not found.");
+  if (secondDash === -1) throw new Error("Malformed .prompt file.");
 
-  const body = txt.slice(secondDash + 3).trimStart();
+  const templateStr = txt.slice(secondDash + 3).trimStart();
+  const compiled =
+    cache && cache.template
+      ? cache.template
+      : Handlebars.compile(templateStr, { noEscape: true });
 
-  cache = { ts: Date.now(), txt: body };
-  return body;
+  cache = { ts: Date.now(), template: compiled };
+  return compiled(vars);
 }

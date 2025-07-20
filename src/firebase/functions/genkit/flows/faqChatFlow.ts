@@ -1,6 +1,6 @@
 import { z } from "genkit";
 import { ai } from "../core";
-import { loadSystemPrompt } from "../prompt";
+import { renderSystemPrompt } from "../prompt";
 import { getContextDocs } from "./getContextDocs.flow";
 import { adminTools } from "../tools";
 import {
@@ -43,27 +43,21 @@ When the user explicitly asks to create, update, or delete an FAQ
 
     const allowedTools = isAdmin ? [...adminTools, ...extTools] : [];
 
-    let sysPrompt = (await loadSystemPrompt())
-      .replace(/\{\{CALLER_ROLE\}\}/g, callerRole)
-      .replace(
-        /\{\{TOOL_RULES\}\}/g,
-        isAdmin ? adminToolRules : userToolRules,
-      )
-      .replace(
-        /\{\{ADMIN_STATUS_RULE\}\}/g,
-        // kept for future compatibility – remove if not needed in template
-        ""
-      );
-
     const docsText =
       contextDocs.length > 0
-        ? `\n\nCONTEXT DOCUMENTS:\n${contextDocs
+        ? contextDocs
             .map((d: any) => `• ${d.pageContent ?? d.content ?? ""}`)
-            .join("\n")}`
+            .join("\n")
         : "";
 
+    const sysPrompt = await renderSystemPrompt({
+      callerRole,
+      toolRules: isAdmin ? adminToolRules : userToolRules,
+      contextDocs: docsText || undefined,
+    });
+
     const { text } = await ai.generate({
-      system: sysPrompt + docsText,
+      system: sysPrompt,
       messages: history.map((m) => ({
         role: m.role as "user" | "model",
         content: [{ text: m.content }],
