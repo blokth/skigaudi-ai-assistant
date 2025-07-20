@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "@/firebase/client";
+import { ref, uploadBytes } from "firebase/storage";
+import { storage } from "@/firebase/client";
+import { useAuth } from "@/context/AuthContext";
 import {
   MainContainer,
   ChatContainer,
@@ -19,6 +22,41 @@ export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMsgs] = useState<ChatMsg[]>([]);
   const [sending, setSending] = useState(false);
+
+  const { isAdmin } = useAuth();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAttachClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // accept only PDF, TXT or MD
+    if (
+      !["application/pdf", "text/plain", "text/markdown"].includes(file.type) &&
+      !/\.(pdf|txt|md)$/i.test(file.name)
+    ) {
+      alert("Unsupported file type.");
+      return;
+    }
+
+    try {
+      const storageRef = ref(storage, `knowledge/${file.name}`);
+      await uploadBytes(storageRef, file);
+      setMsgs(p => [
+        ...p,
+        { author: "ai", text: "File uploaded successfully and will be processed shortly." }
+      ]);
+    } catch {
+      setMsgs(p => [...p, { author: "ai", text: "Upload failed." }]);
+    } finally {
+      if (e.target) e.target.value = "";
+    }
+  };
 
   const handleSend = async (text: string) => {
     if (!text.trim()) return;
@@ -75,7 +113,8 @@ export default function ChatWidget() {
               </MessageList>
               <MessageInput
                 placeholder="Ask a question…"
-                attachButton={false}
+                attachButton={isAdmin}
+                onAttachClick={isAdmin ? handleAttachClick : undefined}
                 disabled={sending}
                 onSend={handleSend}
                 style={{
@@ -86,6 +125,13 @@ export default function ChatWidget() {
               />
             </ChatContainer>
           </MainContainer>
+          <input
+            type="file"
+            accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+          />
         </div>
       )}
     </>
