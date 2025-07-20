@@ -7,29 +7,6 @@ import {
   getExternalTools,
 } from "../mcp";
 
-function buildSystemPrompt(stored: string, isAdmin: boolean) {
-  const toolRules = isAdmin
-    ? `ADMIN DIRECTIVE – READ FIRST:
-When the user explicitly asks to create, update, or delete an FAQ
-  • ALWAYS call the matching tool (createFaq, updateFaq, deleteFaq).
-  • Do NOT output JSON or natural-language explanations before or
-    after the call.`
-    : `You must NEVER expose, reference, or describe any admin tools.`;
-
-  const adminStatusRule = `ADMIN-STATUS DISCLOSURE:
-If the user asks “Am I an admin?” (or similar) answer
-“yes” when CALLER_ROLE is ADMIN and “no” when it is NORMAL USER.`;
-
-  return `${stored || "You are the helpful assistant for the SkiGaudi student winter festival."}
-
-CALLER_ROLE: ${isAdmin ? "ADMIN" : "NORMAL USER"}
-${toolRules}
-${adminStatusRule}
-
-Use the provided FAQ answers and knowledge documents as context to answer or act.
-If the answer isn't covered, reply that you don't have enough information.
-`;
-}
 
 export const faqChatFlow = ai.defineFlow(
   {
@@ -44,15 +21,39 @@ export const faqChatFlow = ai.defineFlow(
     const isAdmin =
       context?.auth?.token?.firebase?.sign_in_provider === "password";
 
+    const callerRole = isAdmin ? "ADMIN" : "NORMAL USER";
+
+    const adminToolRules =
+      `ADMIN DIRECTIVE – READ FIRST:
+When the user explicitly asks to create, update, or delete an FAQ
+  • ALWAYS call the matching tool (createFaq, updateFaq, deleteFaq).
+  • Do NOT output JSON or natural-language explanations before or
+    after the call.`;
+
+    const userToolRules =
+      `You must NEVER expose, reference, or describe any admin tools.`;
+
     const nextContext = { ...context, isAdmin };
 
-    const [sysPrompt, contextDocs, extTools] = await Promise.all([
+    const [_, contextDocs, extTools] = await Promise.all([
       loadSystemPrompt(),
       getContextDocs(history.at(-1)?.content ?? ""),
       getExternalTools(),
     ]);
 
     const allowedTools = isAdmin ? [...adminTools, ...extTools] : [];
+
+    let sysPrompt = (await loadSystemPrompt())
+      .replace(/\{\{CALLER_ROLE\}\}/g, callerRole)
+      .replace(
+        /\{\{TOOL_RULES\}\}/g,
+        isAdmin ? adminToolRules : userToolRules,
+      )
+      .replace(
+        /\{\{ADMIN_STATUS_RULE\}\}/g,
+        // kept for future compatibility – remove if not needed in template
+        ""
+      );
 
     const docsText =
       contextDocs.length > 0
@@ -62,7 +63,7 @@ export const faqChatFlow = ai.defineFlow(
         : "";
 
     const { text } = await ai.generate({
-      system: buildSystemPrompt(sysPrompt, isAdmin) + docsText,
+      system: sysPrompt + docsText,
       messages: history.map((m) => ({
         role: m.role as "user" | "model",
         content: [{ text: m.content }],
