@@ -1,13 +1,16 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 import { signInAnonymously } from "firebase/auth";
+import { CableCar, Music2, PartyPopper, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { auth } from "@/firebase/client";
-import { PartyPopper, Users, Music2, CableCar } from "lucide-react";
 
 export default function Landing() {
 	const router = useRouter();
+
+	const videoUrl =
+		"https://firebasestorage.googleapis.com/v0/b/skigaudi-ai-assistant.firebasestorage.app/o/skiing.mp4?alt=media";
 
 	const anonLogin = async () => {
 		await signInAnonymously(auth);
@@ -15,7 +18,16 @@ export default function Landing() {
 	};
 
 	return (
-		<main className="min-h-screen flex items-center justify-center bg-white text-gray-900 px-4">
+		<main className="relative overflow-hidden min-h-screen flex items-center justify-center bg-white text-gray-900 px-4">
+			<video
+				aria-hidden="true"
+				className="absolute inset-0 w-full h-full object-cover brightness-75"
+				autoPlay
+				loop
+				muted
+				playsInline
+				src={videoUrl}
+			/>
 
 			<div className="relative z-10 flex flex-col items-center gap-14 px-6">
 				{/* HERO */}
@@ -50,11 +62,7 @@ export default function Landing() {
 				</ul>
 
 				{/* WELCOME BUTTON */}
-				<Button
-					onClick={anonLogin}
-					size="lg"
-					className="px-10 py-4 shadow-lg"
-				>
+				<Button onClick={anonLogin} size="lg" className="px-10 py-4 shadow-lg">
 					Welcome
 				</Button>
 			</div>
