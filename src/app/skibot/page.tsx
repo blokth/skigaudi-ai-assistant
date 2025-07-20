@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ref, uploadBytes } from "firebase/storage";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { ref, uploadBytes, listAll, deleteObject } from "firebase/storage";
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
@@ -15,12 +15,24 @@ export default function SkiBotConfig() {
   const [prompt, setPrompt] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const [files, setFiles] = useState<string[]>([]);
+  const [filesLoading, setFilesLoading] = useState(true);
+
   const loadPrompt = useCallback(async () => {
     const snap = await getDoc(doc(db, "systemPrompts", "chatPrompt"));
     setPrompt(snap.exists() ? snap.data()?.content ?? "" : "");
   }, []);
 
   useEffect(() => { loadPrompt(); }, [loadPrompt]);
+
+  const loadFiles = useCallback(async () => {
+    setFilesLoading(true);
+    const folderRef = ref(storage, "knowledge");
+    const { items } = await listAll(folderRef);
+    setFiles(items.map((i) => i.name));
+    setFilesLoading(false);
+  }, []);
+  useEffect(() => { loadFiles(); }, [loadFiles]);
 
   const savePrompt = async () => {
     if (!isAdmin) return;
@@ -54,12 +66,25 @@ export default function SkiBotConfig() {
     try {
       await uploadBytes(ref(storage, `knowledge/${file.name}`), file);
       alert("File uploaded successfully and will be processed shortly.");
+      // refresh file list
+      setFiles((prev) => [...prev, file.name]);
     } catch {
       setErr("Upload failed.");
     } finally {
       setUploading(false);
       if (e.target) e.target.value = "";
     }
+  };
+
+  const deleteFile = async (name: string) => {
+    if (!confirm(`Delete "${name}"?`)) return;
+    // GCS
+    await deleteObject(ref(storage, `knowledge/${name}`)).catch(() => {});
+    // Firestore docs with same title
+    const qs = query(collection(db, "knowledge"), where("title", "==", name));
+    (await getDocs(qs)).forEach(async (d) => await deleteDoc(d.ref));
+    // refresh UI
+    setFiles((prev) => prev.filter((f) => f !== name));
   };
 
   if (loading)
@@ -99,6 +124,23 @@ export default function SkiBotConfig() {
           />
           {err && <p className="text-red-500 text-sm">{err}</p>}
           {uploading && <p className="text-sm">Uploading…</p>}
+
+          {filesLoading ? (
+            <p className="text-sm">Loading documents…</p>
+          ) : files.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No knowledge documents uploaded.</p>
+          ) : (
+            <ul className="space-y-2">
+              {files.map((f) => (
+                <li key={f} className="flex items-center justify-between">
+                  <span>{f}</span>
+                  <Button variant="destructive" size="sm" onClick={() => deleteFile(f)}>
+                    Delete
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
     </main>

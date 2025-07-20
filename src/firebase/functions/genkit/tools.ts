@@ -2,6 +2,8 @@ import { z } from "genkit";
 import { getFirestore } from "firebase-admin/firestore";
 import { ai } from "./core";
 import { indexFaqDocument, unindexFaq } from "../faqIndexer";
+import { unindexKnowledge } from "../knowledgeIndexer";
+import { storage } from "firebase-admin";
 
 /* ─ helper ────────────────────────────────────────────────────────── */
 function isAdmin(context: any): boolean {
@@ -103,4 +105,42 @@ export const setSystemPrompt = ai.defineTool(
   },
 );
 
-export const adminTools = [createFaq, updateFaq, deleteFaq, setSystemPrompt];
+export const deleteKnowledge = ai.defineTool(
+  {
+    name: "deleteKnowledge",
+    description: "Delete a knowledge document (all its chunks & vectors).",
+    inputSchema: z.object({ fileName: z.string() }),
+    ...common,
+  },
+  async ({ fileName }, { context }) => {
+    assertAdmin(context);
+
+    // remove GCS object
+    await storage().bucket().file(`knowledge/${fileName}`).delete({ ignoreNotFound: true });
+
+    // remove Firestore chunk docs (this also un-indexes Firestore-vector mode)
+    const qs = await getFirestore()
+      .collection("knowledge")
+      .where("title", "==", fileName)
+      .get();
+
+    const batch = getFirestore().batch();
+    qs.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+
+    // dev-local vector store: explicit delete
+    if (USE_LOCAL_VECTORSTORE) {
+      await Promise.all(qs.docs.map((d) => unindexKnowledge(d.id)));
+    }
+
+    return `Knowledge document ${fileName} deleted.`;
+  },
+);
+
+export const adminTools = [
+  createFaq,
+  updateFaq,
+  deleteFaq,
+  setSystemPrompt,
+  deleteKnowledge,          // ← add
+];
