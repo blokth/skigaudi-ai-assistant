@@ -42,6 +42,17 @@ const BUCKET_NAME = cleanBucket(
     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
 ) ?? `${defaultProjectId()}.appspot.com`;
 
+/* ── provide Firebase config for local runs ─ */
+if (!process.env.FIREBASE_CONFIG) {
+  process.env.FIREBASE_CONFIG = JSON.stringify({
+    projectId: defaultProjectId(),
+    storageBucket: BUCKET_NAME,
+  });
+}
+if (!process.env.GCLOUD_PROJECT) {
+  process.env.GCLOUD_PROJECT = defaultProjectId();
+}
+
 const knowledgeDevIndexer = devLocalIndexerRef("knowledge");
 
 /* ─ helper: (re)index one Firestore doc ─ */
