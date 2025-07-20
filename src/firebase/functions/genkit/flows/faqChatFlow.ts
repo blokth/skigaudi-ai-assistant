@@ -46,7 +46,13 @@ export const faqChatFlow = ai.defineFlow(
 
 		const isAdmin =
 			context?.auth?.token?.firebase?.sign_in_provider !== "anonymous";
-		const tools = [...extTools, ...(isAdmin ? adminTools : [])];
+		// keep admin tools visible only for authenticated, non-anonymous callers
+		const adminToolNames = new Set(adminTools.map((t) => t.name));
+
+		const tools =
+			isAdmin
+				? extTools                                // admins get everything
+				: extTools.filter((t) => !adminToolNames.has(t.name)); // strip admin tools
 
 
 		try {
