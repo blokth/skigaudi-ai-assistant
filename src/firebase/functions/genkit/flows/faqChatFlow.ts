@@ -55,6 +55,10 @@ export const faqChatFlow = ai.defineFlow(
     const isAdmin =
       context?.auth?.token?.firebase?.sign_in_provider === "password";
 
+    // Enrich the context that will be propagated to subsequent model
+    // generations and tool invocations with the computed admin flag.
+    const nextContext = { ...context, isAdmin };
+
     /* ───────── tool gate ───── */
     // Only expose/run tools when caller is ADMIN
     const allowedTools = isAdmin ? [...adminTools, ...extTools] : [];
@@ -80,7 +84,7 @@ export const faqChatFlow = ai.defineFlow(
       tools: allowedTools,
       maxTurns: 5,
       returnToolRequests: true, // we will decide if they run
-      context,                  // ← propagate auth to tools
+      context: nextContext,     // ← propagate auth + isAdmin to tools
       config: { temperature: 0.8 },
     };
 
@@ -115,7 +119,7 @@ export const faqChatFlow = ai.defineFlow(
 
             const output = await (toolImpl as any)(
               part.toolRequest.input,
-              { context },
+              { context: nextContext },
             );
             return {
               toolResponse: {
