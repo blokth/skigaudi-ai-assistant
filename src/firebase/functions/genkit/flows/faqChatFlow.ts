@@ -124,6 +124,9 @@ export const faqChatFlow = ai.defineFlow(
         // Continue the loop with the new messages + tool results
         opts.messages = messages;
         opts.prompt   = toolResponses;
+
+        // Gemini allows *one* system message only – remove it after first turn
+        delete (opts as any).system;
       }
     } finally {
       await closeMcpHost();
