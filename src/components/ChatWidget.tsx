@@ -93,7 +93,8 @@ export default function ChatWidget() {
 				variant="secondary"
 				size="icon"
 				onClick={() => setOpen((p) => !p)}
-				className="fixed bottom-6 right-6 rounded-full shadow-lg ring-2 ring-white/60 ring-offset-2 ring-offset-sky-600 z-50 w-14 h-14 flex items-center justify-center"
+				className="fixed right-6 rounded-full shadow-lg ring-2 ring-white/60 ring-offset-2 ring-offset-sky-600 z-50 w-14 h-14 flex items-center justify-center"
+				style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}
 			>
 				<MessageCircle className="w-6 h-6" />
 			</Button>
@@ -102,11 +103,12 @@ export default function ChatWidget() {
 			{open && (
 				<div
 					className={cn(
-						"fixed bottom-24 right-6 z-50 w-72 md:w-96 h-[32rem]",
+						"fixed right-6 z-50 w-72 md:w-96 h-[32rem]",
 						"rounded-2xl overflow-hidden shadow-xl",
 						"bg-white/70 dark:bg-gray-900/60 backdrop-blur-md",
 						"border border-gray-200 dark:border-gray-700",
 					)}
+					style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" }}
 				>
 					<MainContainer responsive style={{ backgroundColor: "transparent" }}>
 						<ChatContainer style={{ backgroundColor: "transparent" }}>

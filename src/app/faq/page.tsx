@@ -220,13 +220,12 @@ export default function FAQPage() {
 								</div>
 								{isAdmin && (
 									<div className="flex gap-2 mt-4">
-										<Button size="sm" onClick={() => editFaq(faq)}>
+										<Button size="sm" variant="outline" onClick={() => editFaq(faq)}>
 											Edit
 										</Button>
 										<Button
-											variant="ghost"
+											variant="destructive"
 											size="sm"
-											className="bg-red-600 text-white hover:bg-red-700"
 											onClick={() => removeFaq(faq.id)}
 										>
 											Delete

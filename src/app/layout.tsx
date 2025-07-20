@@ -4,6 +4,8 @@ import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import ChatWidget from "@/components/ChatWidget";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -29,10 +31,12 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+				className={`pt-16 ${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
 				<AuthProvider>
+					<Header />
 					{children}
+					<Footer />
 					<ChatWidget />
 				</AuthProvider>
 			</body>
