@@ -32,7 +32,7 @@ export default function Landing() {
       {/* hero background video – smaller, centered */}
       <div
         aria-hidden="true"
-        className="fixed top-0 left-1/2 -translate-x-1/2
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
                    w-[90vw] max-w-5xl h-[60vh]
                    overflow-hidden rounded-xl
                    -z-20 pointer-events-none"
