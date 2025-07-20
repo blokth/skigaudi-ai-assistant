@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 export default function Footer() {
 	return (
-		<footer className="flex justify-center pointer-events-none mt-24">
+		<footer className="flex justify-center pointer-events-none mt-24 mb-24 sm:mb-32">
 			<div
 			  className={cn(
 			    "pointer-events-auto flex flex-col md:flex-row items-center justify-between gap-4",
