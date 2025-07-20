@@ -1,7 +1,7 @@
 import { z } from "genkit";
 import { getFirestore } from "firebase-admin/firestore";
 import { ai } from "./core";
-import { indexFaqDocument } from "../faqIndexer";
+import { indexFaqDocument, unindexFaq } from "../faqIndexer";
 
 /* ─ helper ────────────────────────────────────────────────────────── */
 function isAdmin(context: any): boolean {
