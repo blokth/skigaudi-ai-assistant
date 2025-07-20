@@ -28,11 +28,11 @@ export default function Landing() {
   };
 
   return (
-    <main className="relative overflow-hidden min-h-screen flex items-center justify-center text-white px-4">
+    <main className="relative overflow-hidden min-h-screen flex justify-center items-start pt-32 text-white px-4">
       {/* hero background video – smaller, centered */}
       <div
         aria-hidden="true"
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+        className="absolute top-32 left-1/2 -translate-x-1/2
                    w-[90vw] max-w-5xl h-[60vh]
                    overflow-hidden rounded-xl
                    -z-20 pointer-events-none"
