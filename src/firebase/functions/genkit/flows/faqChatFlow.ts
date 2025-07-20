@@ -5,7 +5,7 @@ import { getContextDocs } from "./getContextDocs.flow";
 import { adminTools } from "../tools";
 import { getExternalTools, getExternalResources, closeMcpHost } from "../mcp";
 
-function makePrompt(q: string, sys: string, isAdmin: boolean) {
+function buildSystemPrompt(sys: string, isAdmin: boolean) {
 	const roleLine = `CALLER_ROLE: ${isAdmin ? "ADMIN" : "NORMAL USER"}`;
 	const toolRules = isAdmin
 		? `Admin actions are available as TOOLS. If you need to create, update
@@ -20,7 +20,7 @@ ${toolRules}
 Use the provided FAQ answers and knowledge documents as context to answer or act.
 
 If the answer isn't covered, reply that you don't have enough information.
-Question: ${q}`;
+`;
 }
 
 export const faqChatFlow = ai.defineFlow(
@@ -44,7 +44,8 @@ export const faqChatFlow = ai.defineFlow(
 
 		try {
 			const { text } = await ai.generate({
-				prompt: makePrompt(question, sysPrompt, isAdmin),
+				system: buildSystemPrompt(sysPrompt, isAdmin),
+				messages: [{ role: "user", content: question }],
 				docs,
 				tools,
 				resources,
