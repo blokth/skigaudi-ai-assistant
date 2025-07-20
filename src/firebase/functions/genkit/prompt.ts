@@ -22,7 +22,7 @@ export async function renderSystemPrompt(
   if (!txt) {
     const fp = path.join(
       __dirname,
-      "../../../prompts/faqSystem.prompt", // adjust only if you move the prompt dir
+      "@/prompts/faqSystem.prompt", // adjust only if you move the prompt dir
     );
     txt = readFileSync(fp, "utf8").trim();
   }
