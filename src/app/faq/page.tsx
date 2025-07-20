@@ -1,25 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Textarea } from "@/components/ui/Textarea";
-import { Card } from "@/components/ui/Card";
 import {
-	collection,
-	getDocs,
 	addDoc,
-	updateDoc,
+	collection,
 	deleteDoc,
 	doc,
 	getDoc,
-	setDoc,
+	getDocs,
 	serverTimestamp,
+	setDoc,
+	updateDoc,
 } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
-import { storage } from "@/firebase/client";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase/client";
+import { db, storage } from "@/firebase/client";
 
 type FAQ = {
 	id: string;
@@ -157,7 +156,6 @@ export default function FAQPage() {
 					/>
 					<Button
 						variant="secondary"
-						size="md"
 						onClick={saveSysPrompt}
 						disabled={sysSaving}
 					>
@@ -182,12 +180,7 @@ export default function FAQPage() {
 						onChange={(e) => setAnswer(e.target.value)}
 						style={{ height: "6rem" }}
 					/>
-					<Button
-						variant="secondary"
-						size="md"
-						onClick={createFaq}
-						disabled={saving}
-					>
+					<Button variant="secondary" onClick={createFaq} disabled={saving}>
 						{saving ? "Saving…" : "Save"}
 					</Button>
 				</section>
@@ -226,11 +219,7 @@ export default function FAQPage() {
 								</div>
 								{isAdmin && (
 									<div className="flex gap-2 mt-4">
-										<Button
-											variant="primary"
-											size="sm"
-											onClick={() => editFaq(faq)}
-										>
+										<Button size="sm" onClick={() => editFaq(faq)}>
 											Edit
 										</Button>
 										<Button

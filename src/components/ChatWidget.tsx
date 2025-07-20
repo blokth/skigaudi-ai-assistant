@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { httpsCallable } from "firebase/functions";
-import { functions } from "@/firebase/client";
-import { ref, uploadBytes } from "firebase/storage";
-import { storage } from "@/firebase/client";
-import { useAuth } from "@/context/AuthContext";
 import {
-	MainContainer,
 	ChatContainer,
-	MessageList,
+	MainContainer,
 	Message,
 	MessageInput,
+	MessageList,
 } from "@chatscope/chat-ui-kit-react";
+import { httpsCallable } from "firebase/functions";
+import { ref, uploadBytes } from "firebase/storage";
 import { MessageCircle } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { functions, storage } from "@/firebase/client";
 import { cn } from "@/lib/utils";
 
 type ChatMsg = { author: "user" | "ai"; text: string };
