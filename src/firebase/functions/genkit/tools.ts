@@ -1,6 +1,6 @@
 import { z } from "genkit";
 import { getFirestore } from "firebase-admin/firestore";
-import { ai } from "./core";
+import { ai, USE_LOCAL_VECTORSTORE } from "./core";
 import { indexFaqDocument, unindexFaq } from "../faqIndexer";
 import { unindexKnowledge } from "../knowledgeIndexer";
 import { storage } from "firebase-admin";

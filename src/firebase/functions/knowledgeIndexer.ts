@@ -46,7 +46,7 @@ export async function indexKnowledgeDocument(
 /* ─ helper: delete from local store ─ */
 export async function unindexKnowledge(id: string) {
   if (!USE_LOCAL_VECTORSTORE) return;
-  await ai.index({ indexer: knowledgeDevIndexer, deleteIds: [id] });
+  await ai.index({ indexer: knowledgeDevIndexer, deleteIds: [id] } as any);
 }
 
 export const knowledgeDocIndexer = onObjectFinalized(
@@ -150,6 +150,6 @@ export const knowledgeEmbeddingIndexer = onDocumentWritten(
     }
 
     // CREATE / UPDATE → (re)index
-    await indexKnowledgeDocument(after);
+    if (after) await indexKnowledgeDocument(after);
   },
 );

@@ -58,7 +58,7 @@ export async function unindexFaq(id: string) {
   if (!USE_LOCAL_VECTORSTORE) return;
 
   // devLocalVectorstore: delete by id
-  await ai.index({ indexer: faqDevIndexer, deleteIds: [id] });
+  await ai.index({ indexer: faqDevIndexer, deleteIds: [id] } as any);
 }
 
 export const faqEmbeddingIndexer = onDocumentWritten(
@@ -71,6 +71,7 @@ export const faqEmbeddingIndexer = onDocumentWritten(
 			if (beforeSnap?.id) await unindexFaq(beforeSnap.id);
 			return;
 		}
+		if (!afterSnap) return;
 		const data = afterSnap.data();
 		if (!data) return;
 
