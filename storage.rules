@@ -11,6 +11,11 @@ service firebase.storage {
         request.auth.token.firebase.sign_in_provider != "anonymous";
     }
 
+    // Public promo video – anyone may read
+    match /skiing.mp4 {
+      allow read: if true;
+    }
+
     // Fallback – deny everything else
     match /{allPaths=**} {
       allow read, write: if false;

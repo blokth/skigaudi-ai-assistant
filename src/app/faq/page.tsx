@@ -1,25 +1,25 @@
 "use client";
 
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  updateDoc,
+	addDoc,
+	collection,
+	deleteDoc,
+	doc,
+	onSnapshot,
+	updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
-import { db, storage } from "@/firebase/client";
+import { db } from "@/firebase/client";
 
 type FAQ = {
 	id: string;
@@ -39,8 +39,6 @@ export default function FAQPage() {
 
 	const sectionClass = "space-y-4 p-6 bg-card/60 border rounded-xl";
 
-	// admin helpers
-
 	useEffect(() => {
 		const unsub = onSnapshot(collection(db, "faqs"), (snap) => {
 			setFaqs(
@@ -54,17 +52,6 @@ export default function FAQPage() {
 
 		return () => unsub();
 	}, []);
-
-	const saveSysPrompt = async () => {
-		if (!isAdmin) return;
-		setSysSaving(true);
-		await setDoc(doc(db, "systemPrompts", "chatPrompt"), {
-			content: sysPrompt,
-			updatedAt: serverTimestamp(),
-		});
-		setSysSaving(false);
-		alert("System prompt saved");
-	};
 
 	const createFaq = async () => {
 		if (!question.trim() || !answer.trim()) return;
@@ -92,34 +79,6 @@ export default function FAQPage() {
 		setSaving(false);
 	};
 
-	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
-
-		// accept only PDF, TXT or MD
-		if (
-			!["application/pdf", "text/plain", "text/markdown"].includes(file.type) &&
-			!/\.(pdf|txt|md)$/i.test(file.name)
-		) {
-			setUploadError("Unsupported file type.");
-			return;
-		}
-
-		setUploading(true);
-		setUploadError("");
-		try {
-			const storageRef = ref(storage, `knowledge/${file.name}`);
-			await uploadBytes(storageRef, file);
-			alert("File uploaded successfully and will be processed shortly.");
-		} catch (err) {
-			console.error(err);
-			setUploadError("Upload failed.");
-		} finally {
-			setUploading(false);
-			if (e.target) e.target.value = "";
-		}
-	};
-
 	if (loading || authLoading) {
 		return (
 			<main className="min-h-screen flex items-center justify-center">
@@ -134,7 +93,6 @@ export default function FAQPage() {
 				Frequently Asked Questions
 			</h1>
 			<div className="w-full max-w-2xl space-y-12">
-
 				{/* Admin: Add new FAQ */}
 				{isAdmin && (
 					<section className={sectionClass}>
@@ -157,33 +115,39 @@ export default function FAQPage() {
 					</section>
 				)}
 
-        <Accordion type="single" collapsible className="space-y-4">
-          {faqs.map((faq) => (
-            <AccordionItem key={faq.id} value={faq.id}>
-              <AccordionTrigger>{faq.question}</AccordionTrigger>
-              <AccordionContent>
-                <div className="prose dark:prose-invert max-w-none text-base md:text-lg">{faq.answer}</div>
-                {isAdmin && (
-                  <div className="flex gap-2 mt-4">
-                    <Button size="sm" variant="outline" onClick={() => editFaq(faq)}>
-                      Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeFaq(faq.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                )}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-        {!faqs.length && (
-          <p className="text-center text-gray-500">No FAQs yet.</p>
-        )}
+				<Accordion type="multiple" className="space-y-4">
+					{faqs.map((faq) => (
+						<AccordionItem key={faq.id} value={faq.id}>
+							<AccordionTrigger>{faq.question}</AccordionTrigger>
+							<AccordionContent>
+								<div className="prose dark:prose-invert max-w-none text-base md:text-lg">
+									{faq.answer}
+								</div>
+								{isAdmin && (
+									<div className="flex gap-2 mt-4">
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={() => editFaq(faq)}
+										>
+											Edit
+										</Button>
+										<Button
+											variant="destructive"
+											size="sm"
+											onClick={() => removeFaq(faq.id)}
+										>
+											Delete
+										</Button>
+									</div>
+								)}
+							</AccordionContent>
+						</AccordionItem>
+					))}
+				</Accordion>
+				{!faqs.length && (
+					<p className="text-center text-gray-500">No FAQs yet.</p>
+				)}
 			</div>
 		</main>
 	);
