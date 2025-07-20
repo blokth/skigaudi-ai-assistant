@@ -1,5 +1,9 @@
 import { genkit } from "genkit";
-import { vertexAI, textEmbedding005 } from "@genkit-ai/vertexai";
+import {
+  vertexAI,
+  textEmbedding005,
+  gemini20Flash,          // NEW – default chat model
+} from "@genkit-ai/vertexai";
 import { devLocalVectorstore } from "@genkit-ai/dev-local-vectorstore";
 import * as admin from "firebase-admin";
 
@@ -30,6 +34,7 @@ export const ai = genkit({
 				]
 			: []),
 	],
+	model: gemini20Flash,   // NEW – default model for all generations
 });
 
 export { textEmbedding005 };
