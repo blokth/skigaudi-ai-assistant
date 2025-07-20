@@ -41,9 +41,15 @@ if (!admin.apps.length) {
 const mcpHost = createMcpHost({
   name: "skigaudi-mcp-host",
   mcpServers: {
-    memory: {
+    firebase: {
       command: "npx",
-      args: ["-y", "@modelcontextprotocol/server-memory"],
+      args: ["-y", "firebase-tools@latest", "experimental:mcp"],
+      // optional extras:
+      // args: [
+      //   "-y", "firebase-tools@latest", "experimental:mcp",
+      //   "--dir", process.cwd(),          // set project dir explicitly
+      //   "--only", "auth,firestore"       // limit feature groups
+      // ],
     },
   },
 });
