@@ -89,7 +89,20 @@ export default function ChatWidget() {
 		setSending(true);
 		try {
 			const call = httpsCallable(functions, "faqChat");
-			const { data } = await call(text);
+
+			// build history as { role, content }[]
+			const history = [
+				...messages,                       // past turns kept in state
+				{ id: crypto.randomUUID(), author: "user", text }, // current turn
+			]
+				// keep only textual messages
+				.filter((m) => m.text)
+				.map((m) => ({
+					role: m.author === "user" ? "user" : "model",
+					content: m.text!,
+				}));
+
+			const { data } = await call(history);
 			setMsgs((p) => [
 				...p,
 				{ id: crypto.randomUUID(), author: "ai", text: data as string },

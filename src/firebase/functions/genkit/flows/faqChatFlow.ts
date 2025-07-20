@@ -26,11 +26,18 @@ If the answer isn't covered, reply that you don't have enough information.
 export const faqChatFlow = ai.defineFlow(
 	{
 		name: "faqChatFlow",
-		inputSchema: z.string(),
+		inputSchema: z.array(
+			z.object({
+				role: z.enum(["user", "model"]),
+				content: z.string(),
+			}),
+		),
 		outputSchema: z.string(),
 		streamSchema: z.string(),
 	},
-	async (question, { context }) => {
+	async (messages, { context }) => {
+		const question =
+			messages.length > 0 ? messages[messages.length - 1].content : "";
 		const sysPrompt = await loadSystemPrompt();
 		const docs = await getContextDocs(question);
 
@@ -45,7 +52,7 @@ export const faqChatFlow = ai.defineFlow(
 		try {
 			const { text } = await ai.generate({
 				system: buildSystemPrompt(sysPrompt, isAdmin),
-				messages: [{ role: "user", content: question }],
+				messages,                     // entire conversation
 				docs,
 				tools,
 				resources,
