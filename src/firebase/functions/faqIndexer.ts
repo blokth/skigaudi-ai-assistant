@@ -66,7 +66,7 @@ export const faqEmbeddingIndexer = onDocumentWritten(
 	async (event) => {
 		const afterSnap = event.data?.after;
 		// Handle document DELETE → remove from vector store
-		if (!afterSnap?.exists) {
+		if (afterSnap && !afterSnap.exists) {
 			const beforeSnap = event.data?.before;
 			if (beforeSnap?.id) await unindexFaq(beforeSnap.id);
 			return;
