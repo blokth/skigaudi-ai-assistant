@@ -26,7 +26,6 @@ export default function ChatWidget() {
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
 	const pathname = usePathname();
-	if (pathname === "/login") return null;   // hide widget on login page
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -104,6 +103,9 @@ export default function ChatWidget() {
 			setSending(false);
 		}
 	};
+
+	// hide widget & toggle button on /login
+	if (pathname === "/login") return null;
 
 	return (
 		<>
