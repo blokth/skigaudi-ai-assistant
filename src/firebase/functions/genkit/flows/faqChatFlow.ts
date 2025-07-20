@@ -2,6 +2,7 @@ import { z } from "genkit";
 import { ai } from "../core";
 import { loadSystemPrompt } from "../prompt";
 import { getContextDocs } from "./getContextDocs.flow";
+import { adminTools } from "../tools";          // NEW
 import { getExternalTools, getExternalResources, closeMcpHost } from "../mcp";
 
 function buildSystemPrompt(sys: string, isAdmin: boolean) {
@@ -53,8 +54,8 @@ export const faqChatFlow = ai.defineFlow(
 
 		const isAdmin =
 			context?.auth?.token?.firebase?.sign_in_provider !== "anonymous";
-		// Expose NO tools to anonymous / normal users.
-		const tools = isAdmin ? extTools : [];
+		// Admins can use all FAQ-maintenance tools; normal users get none.
+		const tools = isAdmin ? [...adminTools, ...extTools] : [];
 
 
 		try {
