@@ -14,7 +14,12 @@ import {
 import { ref, uploadBytes } from "firebase/storage";
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
@@ -207,42 +212,33 @@ export default function FAQPage() {
 					</section>
 				)}
 
-				<ul className="space-y-4">
-					{faqs.map((faq) => (
-						<Card as="li" key={faq.id} className="overflow-hidden">
-							<details className="group">
-								<summary
-									className="flex items-center justify-between px-5 py-4 cursor-pointer
-									  text-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-								>
-									{faq.question}
-								</summary>
-								<div className="px-5 py-4 border-t border-gray-200 dark:border-gray-700">
-									<div className="prose dark:prose-invert max-w-none">
-										{faq.answer}
-									</div>
-									{isAdmin && (
-										<div className="flex gap-2 mt-4">
-											<Button size="sm" variant="outline" onClick={() => editFaq(faq)}>
-												Edit
-											</Button>
-											<Button
-												variant="destructive"
-												size="sm"
-												onClick={() => removeFaq(faq.id)}
-											>
-												Delete
-											</Button>
-										</div>
-									)}
-								</div>
-							</details>
-						</Card>
-					))}
-					{!faqs.length && (
-						<p className="text-center text-gray-500">No FAQs yet.</p>
-					)}
-				</ul>
+        <Accordion type="single" collapsible className="space-y-4">
+          {faqs.map((faq) => (
+            <AccordionItem key={faq.id} value={faq.id}>
+              <AccordionTrigger>{faq.question}</AccordionTrigger>
+              <AccordionContent>
+                <div className="prose dark:prose-invert max-w-none">{faq.answer}</div>
+                {isAdmin && (
+                  <div className="flex gap-2 mt-4">
+                    <Button size="sm" variant="outline" onClick={() => editFaq(faq)}>
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeFaq(faq.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+        {!faqs.length && (
+          <p className="text-center text-gray-500">No FAQs yet.</p>
+        )}
 			</div>
 		</main>
 	);
