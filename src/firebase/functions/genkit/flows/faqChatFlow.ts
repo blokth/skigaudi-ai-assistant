@@ -133,8 +133,13 @@ export const faqChatFlow = ai.defineFlow(
 
         // Continue the loop with the new messages + tool results
         opts.messages = messages;
-        // Supply executed tool results back to the model.
-        // Genkit expects tool responses to be provided via the "prompt" field.
+
+        // After the first turn we've already supplied docs/resources, so drop
+        // them to avoid mixing FunctionResponse parts with other part types.
+        delete (opts as any).docs;
+        delete (opts as any).resources;
+
+        // Supply executed tool results back to the model via `prompt`.
         opts.prompt = toolResponses;
       }
     } finally {
