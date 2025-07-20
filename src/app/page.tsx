@@ -18,10 +18,10 @@ export default function Landing() {
 	};
 
 	return (
-		<main className="relative overflow-hidden min-h-screen flex items-center justify-center bg-white text-gray-900 px-4">
+		<main className="relative overflow-hidden min-h-screen flex items-center justify-center text-white px-4">
 			<video
 				aria-hidden="true"
-				className="absolute inset-0 w-full h-full object-cover brightness-75"
+				className="fixed inset-0 w-screen h-screen object-cover brightness-75 -z-10"
 				autoPlay
 				loop
 				muted
