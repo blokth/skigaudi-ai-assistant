@@ -143,9 +143,11 @@ export default function FAQPage() {
 	}
 
 	return (
-		<main className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
+		<main className="min-h-screen flex flex-col items-center px-4 py-16">
+			<h1 className="text-4xl md:text-5xl font-bold text-center mt-10 mb-14">
+				Frequently Asked Questions
+			</h1>
 			<div className="w-full max-w-2xl space-y-12">
-				<h1 className="text-4xl md:text-5xl font-bold text-center mb-10">Frequently Asked Questions</h1>
 
 				{/* Admin: Edit system prompt */}
 				{isAdmin && (
