@@ -20,13 +20,17 @@ const USE_LOCAL_VECTORSTORE =
 	process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true" ||
 	!!process.env.FIRESTORE_EMULATOR_HOST;
 
-// Use an explicit bucket only when caller provides one via env.
-// This lets Firebase CLI resolve the default bucket during deploy.
-const EXPLICIT_BUCKET =
+ // Normalise an env-provided bucket string to just the bucket name.
+function cleanBucket(val?: string): string | undefined {
+  return val?.replace(/^gs:\/\//, "").replace(/\/+$/, "") || undefined;
+}
+
+const EXPLICIT_BUCKET = cleanBucket(
   process.env.KNOWLEDGE_BUCKET ??
-  process.env.STORAGE_BUCKET ??
-  process.env.FIREBASE_STORAGE_BUCKET ??
-  undefined;
+    process.env.STORAGE_BUCKET ??
+    process.env.FIREBASE_STORAGE_BUCKET ??
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+);
 
 const knowledgeDevIndexer = devLocalIndexerRef("knowledge");
 
