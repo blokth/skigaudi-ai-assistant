@@ -14,10 +14,10 @@ export default function Header() {
       {/* island */}
       <div
         className={cn(
-          "pointer-events-auto flex items-center gap-8",
+          "pointer-events-auto flex items-center gap-10",
           "bg-white/90 dark:bg-gray-900/80 backdrop-blur-md",
           "border border-gray-200 dark:border-gray-700 shadow-lg",
-          "rounded-full px-6 py-2",
+          "rounded-full px-8 py-3",
         )}
       >
         {/* Brand */}
