@@ -17,21 +17,30 @@ export const db = getFirestore(app);
 export const functions = getFunctions(app, "us-central1");
 export const storage = getStorage(app);
 
-// Use emulator when requested
 if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true") {
-	const fnPort = Number(
-		process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_EMULATOR_PORT || 5003,
-	);
-	const authPort = Number(
-		process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT || 9099,
-	);
+  // --- FUNCTIONS ---
+  const fnPort = Number(
+    process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_EMULATOR_PORT || 5003,
+  );
+  connectFunctionsEmulator(functions, "localhost", fnPort);
 
-	connectFunctionsEmulator(functions, "localhost", fnPort);
-	const stPort = Number(
-		process.env.NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT || 9199,
-	);
-	connectStorageEmulator(storage, "localhost", stPort);
-	// Vector search requires production Firestore; do NOT connect to the Firestore emulator.
-	// Keep Auth on production when Firestore is on production.
-	// Auth emulator disabled to avoid invalid tokens against production Firestore.
+  // --- FIRESTORE ---
+  const fsPort = Number(
+    process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_PORT || 8080,
+  );
+  connectFirestoreEmulator(db, "localhost", fsPort);
+
+  // --- AUTH ---
+  const authPort = Number(
+    process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_PORT || 9099,
+  );
+  connectAuthEmulator(auth, `http://localhost:${authPort}`, {
+    disableWarnings: true,
+  });
+
+  // --- STORAGE ---
+  const stPort = Number(
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_EMULATOR_PORT || 9199,
+  );
+  connectStorageEmulator(storage, "localhost", stPort);
 }
