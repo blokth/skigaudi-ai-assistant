@@ -1,5 +1,5 @@
 import Handlebars from "handlebars";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -20,8 +20,19 @@ export async function renderSystemPrompt(
 
   // 2) fall back to repo default
   if (!txt) {
-    // points from  …/lib/genkit  →  …/prompts/faqSystem.prompt
-    const fp = path.resolve(__dirname, "..", "..", "prompts", "faqSystem.prompt");
+    // try a list of possible locations (works in dev, build, and Cloud Functions)
+    const candidates = [
+      path.resolve(__dirname, "..", "..", "prompts", "faqSystem.prompt"),                // dev ‑ ts-node
+      path.resolve(__dirname, "..", "..", "..", "..", "..", "prompts", "faqSystem.prompt"), // compiled lib/
+      path.resolve(process.cwd(), "prompts", "faqSystem.prompt"),                        // cwd fallback
+    ];
+
+    const fp = candidates.find((p) => existsSync(p));
+    if (!fp) {
+      throw new Error(
+        "Cannot locate prompts/faqSystem.prompt – checked:\n" + candidates.join("\n"),
+      );
+    }
     txt = readFileSync(fp, "utf8").trim();
   }
 
