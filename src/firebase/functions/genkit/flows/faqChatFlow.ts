@@ -5,7 +5,6 @@ import { getContextDocs } from "./getContextDocs.flow";
 import { adminTools } from "../tools";
 import {
   getExternalTools,
-  getExternalResources,
 } from "../mcp";
 
 function buildSystemPrompt(stored: string, isAdmin: boolean) {
@@ -47,23 +46,27 @@ export const faqChatFlow = ai.defineFlow(
 
     const nextContext = { ...context, isAdmin };
 
-    const [sysPrompt, docs, resources, extTools] = await Promise.all([
+    const [sysPrompt, contextDocs, extTools] = await Promise.all([
       loadSystemPrompt(),
       getContextDocs(history.at(-1)?.content ?? ""),
-      getExternalResources(),
       getExternalTools(),
     ]);
 
     const allowedTools = isAdmin ? [...adminTools, ...extTools] : [];
 
+    const docsText =
+      contextDocs.length > 0
+        ? `\n\nCONTEXT DOCUMENTS:\n${contextDocs
+            .map((d) => `• ${d.pageContent ?? d.content ?? ""}`)
+            .join("\n")}`
+        : "";
+
     const { text } = await ai.generate({
-      system: buildSystemPrompt(sysPrompt, isAdmin),
-      messages: history.map(m => ({
+      system: buildSystemPrompt(sysPrompt, isAdmin) + docsText,
+      messages: history.map((m) => ({
         role: m.role as "user" | "model",
-        content: m.content,
+        content: [{ text: m.content }],
       })),
-      docs,
-      resources,
       tools: allowedTools,
       maxTurns: 5,
       context: nextContext,
