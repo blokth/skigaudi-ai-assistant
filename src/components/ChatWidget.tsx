@@ -16,7 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import { functions, storage } from "@/firebase/client";
 import { cn } from "@/lib/utils";
 
-type ChatMsg = { author: "user" | "ai"; text: string };
+type ChatMsg = { id: string; author: "user" | "ai"; text: string };
 
 export default function ChatWidget() {
 	const [open, setOpen] = useState(false);
@@ -50,6 +50,7 @@ export default function ChatWidget() {
 			setMsgs((p) => [
 				...p,
 				{
+					id: crypto.randomUUID(),
 					author: "ai",
 					text: "File uploaded successfully and will be processed shortly.",
 				},
@@ -63,14 +64,20 @@ export default function ChatWidget() {
 
 	const handleSend = async (text: string) => {
 		if (!text.trim()) return;
-		setMsgs((p) => [...p, { author: "user", text }]);
+		setMsgs((p) => [...p, { id: crypto.randomUUID(), author: "user", text }]);
 		setSending(true);
 		try {
 			const call = httpsCallable(functions, "faqChat");
 			const { data } = await call(text);
-			setMsgs((p) => [...p, { author: "ai", text: data as string }]);
+			setMsgs((p) => [
+				...p,
+				{ id: crypto.randomUUID(), author: "ai", text: data as string },
+			]);
 		} catch {
-			setMsgs((p) => [...p, { author: "ai", text: "Something went wrong." }]);
+			setMsgs((p) => [
+				...p,
+				{ id: crypto.randomUUID(), author: "ai", text: "Something went wrong." },
+			]);
 		} finally {
 			setSending(false);
 		}
@@ -103,9 +110,9 @@ export default function ChatWidget() {
 							<MessageList
 								style={{ backgroundColor: "transparent", padding: "0.75rem" }}
 							>
-								{messages.map((m, i) => (
+								{messages.map((m) => (
 									<Message
-										key={i}
+										key={m.id}
 										model={{
 											position: "normal",
 											message: m.text,

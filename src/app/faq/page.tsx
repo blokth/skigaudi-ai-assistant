@@ -12,7 +12,7 @@ import {
 	updateDoc,
 } from "firebase/firestore";
 import { ref, uploadBytes } from "firebase/storage";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,7 @@ type FAQ = {
 };
 
 export default function FAQPage() {
-	const { user, isAdmin, loading: authLoading } = useAuth();
+	const { isAdmin, loading: authLoading } = useAuth();
 
 	const [faqs, setFaqs] = useState<FAQ[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -46,10 +46,10 @@ export default function FAQPage() {
 	useEffect(() => {
 		loadFaqs();
 		loadSysPrompt();
-	}, []);
+	}, [loadFaqs, loadSysPrompt]);
 
 	// admin helpers
-	const loadFaqs = async () => {
+	const loadFaqs = useCallback(async () => {
 		const snap = await getDocs(collection(db, "faqs"));
 		setFaqs(
 			snap.docs.map((d) => ({
@@ -60,9 +60,10 @@ export default function FAQPage() {
 		setLoading(false);
 	};
 
-	const loadSysPrompt = async () => {
+	const loadSysPrompt = useCallback(async () => {
 		const snap = await getDoc(doc(db, "systemPrompts", "chatPrompt"));
-		setSysPrompt(snap.exists() ? (snap.data() as any).content : "");
+		const data = snap.data() as { content?: string } | undefined;
+		setSysPrompt(snap.exists() ? data?.content ?? "" : "");
 	};
 
 	const saveSysPrompt = async () => {

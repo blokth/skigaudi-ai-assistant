@@ -16,8 +16,10 @@ export default function AdminLogin() {
 		try {
 			await signInWithEmailAndPassword(auth, email, pw);
 			router.replace("/faq");
-		} catch (err: any) {
-			setError(err.message);
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error ? err.message : "An unexpected error occurred";
+			setError(message);
 		}
 	};
 
