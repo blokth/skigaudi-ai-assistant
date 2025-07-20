@@ -20,7 +20,7 @@ export const faqChatFlow = ai.defineFlow(
 		outputSchema: z.string(),
 		streamSchema: z.string(),
 	},
-	async (question, { sendChunk, context }) => {
+	async (question, { context }) => {
 		const sysPrompt = await loadSystemPrompt();
 		const docs = await getContextDocs(question);
 
@@ -35,25 +35,20 @@ export const faqChatFlow = ai.defineFlow(
 		const toolMap = Object.fromEntries(tools.map((t) => [t.name, t]));
 
 		try {
-			const { stream, response } = ai.generateStream({
+			const { text } = await ai.generate({
 				model: gemini20Flash,
 				prompt: makePrompt(question, sysPrompt),
 				docs,
 				tools,
 				resources,
 				config: { temperature: 0.8 },
-
-				// NEW ─ auto-execute every recognised tool call
 				toolExecutor: async ({ name, args }) => {
 					const tool = toolMap[name];
 					if (!tool) throw new Error(`Unknown tool: ${name}`);
-					return await tool(args); // executes the tool and returns its output
+					return await tool(args);
 				},
 			});
-			for await (const chunk of stream) {
-				if (chunk.type === "text") sendChunk(chunk.text);
-			}
-			return (await response).text;
+			return text;
 		} finally {
 			await closeMcpHost();
 		}
