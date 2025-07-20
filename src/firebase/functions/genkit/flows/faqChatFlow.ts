@@ -60,14 +60,20 @@ export const faqChatFlow = ai.defineFlow(
     const allowedTools = isAdmin ? [...adminTools, ...extTools] : [];
 
     /* ───────── messages ────── */
-    const llmMsgs = history.map((m) => ({
-      role: m.role,                 //   "user" | "model"
-      content: [{ text: m.content }],
-    }));
+    // prepend ONE system-message so Gemini never receives a second one
+    const llmMsgs = [
+      {
+        role: "system" as const,
+        content: [{ text: buildSystemPrompt(sysPrompt, isAdmin) }],
+      },
+      ...history.map((m) => ({
+        role: m.role as "user" | "model",
+        content: [{ text: m.content }],
+      })),
+    ];
 
     /* ───────── generation loop with manual tool handling ───────── */
     const opts: Parameters<typeof ai.generate>[0] = {
-      system: buildSystemPrompt(sysPrompt, isAdmin),
       messages: llmMsgs,
       docs,
       resources,
@@ -124,9 +130,6 @@ export const faqChatFlow = ai.defineFlow(
         // Continue the loop with the new messages + tool results
         opts.messages = messages;
         opts.prompt   = toolResponses;
-
-        // Gemini allows *one* system message only – remove it after first turn
-        delete (opts as any).system;
       }
     } finally {
       await closeMcpHost();
