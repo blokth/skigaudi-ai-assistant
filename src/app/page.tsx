@@ -16,7 +16,7 @@ export default function Landing() {
 	};
 
 	return (
-		<main className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-sky-200 via-violet-200 to-fuchsia-200 text-gray-900">
+		<main className="min-h-screen flex items-center justify-center bg-white text-gray-900 px-4">
 			{/* ADMIN – top-right */}
 			<Button
 				asChild
@@ -26,24 +26,12 @@ export default function Landing() {
 			>
 				<Link href="/login">Admin&nbsp;login</Link>
 			</Button>
-			{/* halftone dots */}
-			<div
-				className="absolute inset-0 pointer-events-none opacity-40"
-				style={{
-					backgroundImage:
-						"radial-gradient(circle, rgba(255,255,255,.35) 1.5px, transparent 1.5px)",
-					backgroundSize: "18px 18px",
-				}}
-			/>
-			{/* subtle animated blobs */}
-			<div className="absolute -left-44 -top-32 w-[36rem] h-[36rem] bg-fuchsia-300/20 rounded-full blur-3xl animate-pulse" />
-			<div className="absolute -right-52 -bottom-40 w-[36rem] h-[36rem] bg-sky-300/20 rounded-full blur-3xl animate-pulse" />
 
 			<div className="relative z-10 flex flex-col items-center gap-14 px-6">
 				{/* HERO */}
 				<header className="text-center space-y-4">
-					<h1 className="text-6xl md:text-8xl font-extrabold tracking-tight">
-						<span className="text-yellow-300">Ski</span>Gaudi
+					<h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">
+						SkiGaudi
 					</h1>
 					<p className="max-w-xl mx-auto text-lg md:text-xl font-medium">
 						The Student&nbsp;Winter&nbsp;Festival · 4 days skiing, 5 stages,
@@ -52,7 +40,7 @@ export default function Landing() {
 				</header>
 
 				{/* HIGHLIGHTS */}
-				<ul className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-sm md:text-base font-medium">
+				<ul className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-xs md:text-sm font-medium">
 					<li className="flex flex-col items-center gap-1">
 						<CableCar className="w-6 h-6" />
 						4&nbsp;Days Skiing
