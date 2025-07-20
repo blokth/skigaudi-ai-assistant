@@ -31,8 +31,8 @@ export default function Landing() {
     <main className="relative overflow-hidden min-h-screen flex justify-center items-start pt-32 text-white px-4">
       <div
         className="relative flex flex-col items-center justify-center gap-14 px-6
-                   w-[90vw] max-w-5xl h-[60vh]
-                   overflow-hidden rounded-xl"
+                   w-[95vw] max-w-6xl h-[75vh]
+                   overflow-hidden rounded-2xl"
       >
         {/* background video */}
         <video
