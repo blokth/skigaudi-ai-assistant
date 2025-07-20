@@ -22,7 +22,7 @@ export const faqChatFlow = ai.defineFlow(
   },
   async (question, { sendChunk, context }) => {
     const sysPrompt  = await loadSystemPrompt();
-    const docs       = await ai.call(getContextDocs, question);
+    const docs       = await getContextDocs(question);
 
     const extTools  = await getExternalTools();
     const resources = await getExternalResources();
