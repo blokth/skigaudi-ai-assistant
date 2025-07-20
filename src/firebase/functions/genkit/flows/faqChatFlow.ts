@@ -57,7 +57,7 @@ export const faqChatFlow = ai.defineFlow(
     const docsText =
       contextDocs.length > 0
         ? `\n\nCONTEXT DOCUMENTS:\n${contextDocs
-            .map((d) => `• ${d.pageContent ?? d.content ?? ""}`)
+            .map((d: any) => `• ${d.pageContent ?? d.content ?? ""}`)
             .join("\n")}`
         : "";
 
