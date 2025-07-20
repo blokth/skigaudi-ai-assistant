@@ -56,7 +56,10 @@ export default function ChatWidget() {
 				},
 			]);
 		} catch {
-			setMsgs((p) => [...p, { author: "ai", text: "Upload failed." }]);
+			setMsgs((p) => [
+				...p,
+				{ id: crypto.randomUUID(), author: "ai", text: "Upload failed." },
+			]);
 		} finally {
 			if (e.target) e.target.value = "";
 		}
