@@ -4,6 +4,7 @@ import { httpsCallable } from "firebase/functions";
 import { ref, uploadBytes } from "firebase/storage";
 import { MessageCircle, Paperclip, Send } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { functions, storage } from "@/firebase/client";
@@ -23,6 +24,9 @@ export default function ChatWidget() {
 
 	const [input, setInput] = useState("");
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+
+	const pathname = usePathname();
+	if (pathname === "/login") return null;   // hide widget on login page
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,10 +109,10 @@ export default function ChatWidget() {
 		<>
 			{/* floating toggle button */}
 			<Button
-				variant="secondary"
+				variant="default"
 				size="icon"
 				onClick={() => setOpen((p) => !p)}
-				className="fixed right-6 rounded-full shadow-lg ring-2 ring-white/60 ring-offset-2 ring-offset-sky-600 z-50 w-14 h-14 flex items-center justify-center"
+				className="fixed right-6 z-50 w-12 h-12 rounded-full shadow-md flex items-center justify-center active:scale-95 transition-transform"
 				style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}
 			>
 				<MessageCircle className="w-6 h-6" />
