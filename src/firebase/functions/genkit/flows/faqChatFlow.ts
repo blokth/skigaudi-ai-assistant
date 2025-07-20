@@ -2,7 +2,6 @@ import { z } from "genkit";
 import { ai } from "../core";
 import { loadSystemPrompt } from "../prompt";
 import { getContextDocs } from "./getContextDocs.flow";
-import { adminTools } from "../tools";
 import { getExternalTools, getExternalResources, closeMcpHost } from "../mcp";
 
 function buildSystemPrompt(sys: string, isAdmin: boolean) {
@@ -46,13 +45,8 @@ export const faqChatFlow = ai.defineFlow(
 
 		const isAdmin =
 			context?.auth?.token?.firebase?.sign_in_provider !== "anonymous";
-		// keep admin tools visible only for authenticated, non-anonymous callers
-		const adminToolNames = new Set(adminTools.map((t) => t.name));
-
-		const tools =
-			isAdmin
-				? extTools                                // admins get everything
-				: extTools.filter((t) => !adminToolNames.has(t.name)); // strip admin tools
+		// Expose NO tools to anonymous / normal users.
+		const tools = isAdmin ? extTools : [];
 
 
 		try {
