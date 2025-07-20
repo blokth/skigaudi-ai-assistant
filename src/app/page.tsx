@@ -29,27 +29,23 @@ export default function Landing() {
 
   return (
     <main className="relative overflow-hidden min-h-screen flex justify-center items-start pt-32 text-white px-4">
-      {/* hero background video – smaller, centered */}
       <div
-        aria-hidden="true"
-        className="absolute top-32 left-1/2 -translate-x-1/2
+        className="relative flex flex-col items-center gap-14 px-6
                    w-[90vw] max-w-5xl h-[60vh]
-                   overflow-hidden rounded-xl
-                   -z-20 pointer-events-none"
+                   overflow-hidden rounded-xl"
       >
+        {/* background video */}
         <video
-          className="w-full h-full object-cover brightness-50"
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover brightness-50 -z-10 pointer-events-none"
           autoPlay
           loop
           muted
           playsInline
           src={videoUrl}
         />
-        {/* extra dimming layer */}
-        <div className="absolute inset-0 bg-black/30" />
-      </div>
+        <div aria-hidden="true" className="absolute inset-0 bg-black/30 -z-10" />
 
-      <div className="relative z-10 flex flex-col items-center gap-14 px-6">
         {/* HERO */}
         <header className="text-center space-y-4">
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">
