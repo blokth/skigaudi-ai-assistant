@@ -8,6 +8,12 @@ import { getExternalTools, getExternalResources, closeMcpHost } from "../mcp";
 function makePrompt(q: string, sys: string) {
 	return `${sys || "You are the helpful assistant for the SkiGaudi student winter festival."}
 Use the provided FAQ answers and knowledge documents as context to answer or act.
+
+Admin actions are available as TOOLS. If you need to create, update or
+delete an FAQ (or change the system prompt), **invoke the appropriate
+tool via the model’s built-in function-calling interface**. Do NOT print
+any JSON describing the call.
+
 If the answer isn't covered, reply that you don't have enough information.
 Question: ${q}`;
 }
