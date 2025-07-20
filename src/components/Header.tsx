@@ -16,6 +16,9 @@ export default function Header() {
 				<nav className="flex items-center gap-4 text-sm font-medium">
 					<Link href="/">Home</Link>
 					<Link href="/faq">FAQ</Link>
+					<Link href="/login" className="hover:underline">
+						Admin&nbsp;login
+					</Link>
 					{/* <Link href="/tickets">Tickets</Link> */}
 				</nav>
 			</div>

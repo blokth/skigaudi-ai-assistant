@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { signInAnonymously } from "firebase/auth";
@@ -17,15 +16,6 @@ export default function Landing() {
 
 	return (
 		<main className="min-h-screen flex items-center justify-center bg-white text-gray-900 px-4">
-			{/* ADMIN – top-right */}
-			<Button
-				asChild
-				variant="secondary"
-				size="sm"
-				className="absolute top-6 right-6 md:top-8 md:right-8"
-			>
-				<Link href="/login">Admin&nbsp;login</Link>
-			</Button>
 
 			<div className="relative z-10 flex flex-col items-center gap-14 px-6">
 				{/* HERO */}
