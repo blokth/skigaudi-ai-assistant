@@ -21,7 +21,7 @@ export default function Header() {
   const router = useRouter();
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 flex justify-center pointer-events-none py-4">
+    <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-center pointer-events-none h-16">
       {/* island */}
       <div
         className={cn(
