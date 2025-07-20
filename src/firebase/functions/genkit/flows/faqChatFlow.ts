@@ -133,9 +133,9 @@ export const faqChatFlow = ai.defineFlow(
 
         // Continue the loop with the new messages + tool results
         opts.messages = messages;
-        // supply executed tool results back to the model
-        // (Genkit expects them in `toolResponses`)
-        opts.toolResponses = toolResponses;
+        // Supply executed tool results back to the model.
+        // Genkit expects tool responses to be provided via the "prompt" field.
+        opts.prompt = toolResponses;
       }
     } finally {
       await closeMcpHost();
