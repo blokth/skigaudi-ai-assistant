@@ -73,7 +73,7 @@ export default function Landing() {
           size="lg"
           className="px-12 py-5 rounded-full text-lg font-semibold text-gray-900
                      bg-amber-400 hover:bg-amber-300
-                     shadow-lg shadow-amber-500/40
+                     shadow-lg shadow-amber-500/20
                      transition-transform duration-200 hover:scale-105 active:scale-95
                      focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-300/60"
         >
