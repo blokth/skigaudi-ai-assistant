@@ -5,6 +5,7 @@ import { CableCar, Music2, PartyPopper, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/firebase/client";
+import confetti from "canvas-confetti";
 
 export default function Landing() {
   const router = useRouter();
@@ -12,7 +13,16 @@ export default function Landing() {
   const videoUrl =
     "https://firebasestorage.googleapis.com/v0/b/skigaudi-ai-assistant.firebasestorage.app/o/skiing.mp4?alt=media";
 
-  const anonLogin = async () => {
+  const anonLogin = async (e: React.MouseEvent) => {
+    confetti({
+      particleCount: 120,
+      spread: 90,
+      origin: {
+        x: e.clientX / window.innerWidth,
+        y: e.clientY / window.innerHeight,
+      },
+    });
+
     await signInAnonymously(auth);
     router.push("/faq");
   };
