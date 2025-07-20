@@ -68,7 +68,15 @@ export default function Landing() {
         </ul>
 
         {/* WELCOME BUTTON */}
-        <Button onClick={anonLogin} size="lg" className="px-10 py-4 shadow-lg">
+        <Button
+          onClick={anonLogin}
+          size="lg"
+          className="px-12 py-5 rounded-full text-lg font-semibold text-gray-900
+                     bg-amber-400 hover:bg-amber-300
+                     shadow-lg shadow-amber-500/40
+                     transition-transform duration-200 hover:scale-105 active:scale-95
+                     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-300/60"
+        >
           Welcome
         </Button>
       </div>
