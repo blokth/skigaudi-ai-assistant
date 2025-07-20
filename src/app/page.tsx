@@ -34,15 +34,19 @@ export default function Landing() {
                    w-[95vw] max-w-6xl h-[75vh]
                    overflow-hidden rounded-2xl"
 			>
-				{/* background video */}
+				{/* background video (optimized) */}
 				<video
 					className="absolute inset-0 w-full h-full object-cover brightness-50 -z-10 pointer-events-none"
 					autoPlay
 					loop
 					muted
 					playsInline
-					src={videoUrl}
-				/>
+					preload="metadata"          {/* don’t download full file up-front */}
+					aria-hidden="true"          {/* purely decorative */}
+				>
+					<source src={videoUrl} type="video/mp4" />
+					Your browser does not support the video tag.
+				</video>
 				<div
 					aria-hidden="true"
 					className="absolute inset-0 bg-black/30 -z-10"
