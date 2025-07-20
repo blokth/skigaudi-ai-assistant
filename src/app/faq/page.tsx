@@ -6,7 +6,7 @@ import {
 	deleteDoc,
 	doc,
 	getDoc,
-	getDocs,
+	onSnapshot,
 	serverTimestamp,
 	setDoc,
 	updateDoc,
@@ -49,16 +49,6 @@ export default function FAQPage() {
 	const sectionClass = "space-y-4 p-6 bg-card/60 border rounded-xl";
 
 	// admin helpers
-	const loadFaqs = useCallback(async () => {
-		const snap = await getDocs(collection(db, "faqs"));
-		setFaqs(
-			snap.docs.map((d) => ({
-				id: d.id,
-				...(d.data() as Omit<FAQ, "id">),
-			})),
-		);
-		setLoading(false);
-	}, []);
 
 	const loadSysPrompt = useCallback(async () => {
 		const snap = await getDoc(doc(db, "systemPrompts", "chatPrompt"));
@@ -67,9 +57,19 @@ export default function FAQPage() {
 	}, []);
 
 	useEffect(() => {
-		loadFaqs();
+		const unsub = onSnapshot(collection(db, "faqs"), (snap) => {
+			setFaqs(
+				snap.docs.map((d) => ({
+					id: d.id,
+					...(d.data() as Omit<FAQ, "id">),
+				})),
+			);
+			setLoading(false);
+		});
+
 		loadSysPrompt();
-	}, [loadFaqs, loadSysPrompt]);
+		return () => unsub();
+	}, [loadSysPrompt]);
 
 	const saveSysPrompt = async () => {
 		if (!isAdmin) return;
@@ -88,7 +88,6 @@ export default function FAQPage() {
 		await addDoc(collection(db, "faqs"), { question, answer });
 		setQuestion("");
 		setAnswer("");
-		await loadFaqs();
 		setSaving(false);
 	};
 
@@ -99,7 +98,6 @@ export default function FAQPage() {
 		if (a == null) return;
 		setSaving(true);
 		await updateDoc(doc(db, "faqs", faq.id), { question: q, answer: a });
-		await loadFaqs();
 		setSaving(false);
 	};
 
@@ -107,7 +105,6 @@ export default function FAQPage() {
 		if (!confirm("Delete this FAQ?")) return;
 		setSaving(true);
 		await deleteDoc(doc(db, "faqs", id));
-		await loadFaqs();
 		setSaving(false);
 	};
 
