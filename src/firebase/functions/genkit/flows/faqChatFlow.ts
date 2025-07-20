@@ -35,8 +35,7 @@ When the user explicitly asks to create, update, or delete an FAQ
 
     const nextContext = { ...context, isAdmin };
 
-    const [_, contextDocs, extTools] = await Promise.all([
-      loadSystemPrompt(),
+    const [contextDocs, extTools] = await Promise.all([
       getContextDocs(history.at(-1)?.content ?? ""),
       getExternalTools(),
     ]);
