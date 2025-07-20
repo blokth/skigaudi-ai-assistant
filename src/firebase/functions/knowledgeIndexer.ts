@@ -20,6 +20,12 @@ const USE_LOCAL_VECTORSTORE =
 	process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true" ||
 	!!process.env.FIRESTORE_EMULATOR_HOST;
 
+const BUCKET_NAME =
+  process.env.KNOWLEDGE_BUCKET ||
+  process.env.STORAGE_BUCKET ||
+  process.env.FIREBASE_STORAGE_BUCKET ||
+  `${process.env.GOOGLE_CLOUD_PROJECT || "skigaudi-ai-assistant"}.appspot.com`;
+
 const knowledgeDevIndexer = devLocalIndexerRef("knowledge");
 
 /* ─ helper: (re)index one Firestore doc ─ */
@@ -50,7 +56,7 @@ export async function unindexKnowledge(id: string) {
 }
 
 export const knowledgeDocIndexer = onObjectFinalized(
-	{ region: "us-central1" },
+	{ region: "us-central1", bucket: BUCKET_NAME },
 	async (event) => {
 		const object = event.data;
 		if (!object) return;
