@@ -43,11 +43,6 @@ export default function FAQPage() {
 
 	const sectionClass = "mb-8 space-y-4 p-6";
 
-	useEffect(() => {
-		loadFaqs();
-		loadSysPrompt();
-	}, [loadFaqs, loadSysPrompt]);
-
 	// admin helpers
 	const loadFaqs = useCallback(async () => {
 		const snap = await getDocs(collection(db, "faqs"));
@@ -58,13 +53,18 @@ export default function FAQPage() {
 			})),
 		);
 		setLoading(false);
-	};
+	}, []);
 
 	const loadSysPrompt = useCallback(async () => {
 		const snap = await getDoc(doc(db, "systemPrompts", "chatPrompt"));
 		const data = snap.data() as { content?: string } | undefined;
 		setSysPrompt(snap.exists() ? data?.content ?? "" : "");
-	};
+	}, []);
+
+	useEffect(() => {
+		loadFaqs();
+		loadSysPrompt();
+	}, [loadFaqs, loadSysPrompt]);
 
 	const saveSysPrompt = async () => {
 		if (!isAdmin) return;
