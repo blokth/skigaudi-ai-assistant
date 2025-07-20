@@ -1,4 +1,5 @@
 import { onObjectFinalized } from "firebase-functions/v2/storage";
+import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";
 import { textEmbedding005 } from "@genkit-ai/vertexai";
 import { ai } from "./genkit/core";
@@ -20,6 +21,33 @@ const USE_LOCAL_VECTORSTORE =
 	!!process.env.FIRESTORE_EMULATOR_HOST;
 
 const knowledgeDevIndexer = devLocalIndexerRef("knowledge");
+
+/* ─ helper: (re)index one Firestore doc ─ */
+export async function indexKnowledgeDocument(
+  snap: admin.firestore.DocumentSnapshot,
+) {
+  const data = snap.data();
+  if (!data) return;
+
+  const embedding = (
+    await ai.embed({ embedder: textEmbedding005, content: data.content })
+  )[0].embedding;
+
+  if (USE_LOCAL_VECTORSTORE) {
+    await ai.index({
+      indexer: knowledgeDevIndexer,
+      documents: [Document.fromText(data.content, { id: snap.id })],
+    });
+  } else {
+    await snap.ref.update({ embedding: FieldValue.vector(embedding) });
+  }
+}
+
+/* ─ helper: delete from local store ─ */
+export async function unindexKnowledge(id: string) {
+  if (!USE_LOCAL_VECTORSTORE) return;
+  await ai.index({ indexer: knowledgeDevIndexer, deleteIds: [id] });
+}
 
 export const knowledgeDocIndexer = onObjectFinalized(
 	{ region: "us-central1" },
@@ -107,4 +135,21 @@ export const knowledgeDocIndexer = onObjectFinalized(
 			await batch.commit();
 		}
 	},
+);
+
+export const knowledgeEmbeddingIndexer = onDocumentWritten(
+  { document: "knowledge/{docId}", region: "us-central1" },
+  async (event) => {
+    const after = event.data?.after;
+
+    // DELETE  → remove from vector store
+    if (after && !after.exists) {
+      const before = event.data?.before;
+      if (before?.id) await unindexKnowledge(before.id);
+      return;
+    }
+
+    // CREATE / UPDATE → (re)index
+    await indexKnowledgeDocument(after);
+  },
 );
