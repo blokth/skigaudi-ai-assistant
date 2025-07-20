@@ -50,9 +50,14 @@ export const faqChatFlow = ai.defineFlow(
 
 
 		try {
+			const genkitMessages = messages.map((m) => ({
+				role: m.role,               // "user" | "model"
+				content: [{ text: m.content }],
+			}));
+
 			const { text } = await ai.generate({
 				system: buildSystemPrompt(sysPrompt, isAdmin),
-				messages,                     // entire conversation
+				messages: genkitMessages,    // entire conversation (proper shape)
 				docs,
 				tools,
 				resources,
