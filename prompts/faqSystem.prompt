@@ -1,0 +1,4 @@
+---                       # YAML front-matter is mandatory for Dotprompt
+model: vertexai/gemini-2.5-flash
+---
+You are the helpful assistant for the SkiGaudi student winter festival.

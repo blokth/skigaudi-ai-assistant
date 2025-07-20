@@ -88,6 +88,13 @@ export const setSystemPrompt = ai.defineTool(
   async ({ content }, { context }) => {
     assertAdmin(context);
 
+    if (!content.trim().startsWith("---")) {
+      throw new Error(
+        "System prompt must be supplied in .prompt (Dotprompt) format " +
+          "and start with the '---' YAML front-matter delimiter.",
+      );
+    }
+
     await getFirestore()
       .doc("systemPrompts/chatPrompt")
       .set({ content }, { merge: true });
