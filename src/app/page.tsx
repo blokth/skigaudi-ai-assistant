@@ -41,15 +41,14 @@ export default function Landing() {
 					loop
 					muted
 					playsInline
-					preload="metadata"          {/* don’t download full file up-front */}
-					aria-hidden="true"          {/* purely decorative */}
+					preload="metadata"
 				>
 					<source src={videoUrl} type="video/mp4" />
 					Your browser does not support the video tag.
 				</video>
 				<div
 					aria-hidden="true"
-					className="absolute inset-0 bg-black/30 -z-10"
+					className="absolute inset-0 bg-black/10 -z-10"
 				/>
 
 				{/* HERO */}

@@ -22,9 +22,10 @@ export async function renderSystemPrompt(
   if (!txt) {
     // try a list of possible locations (works in dev, build, and Cloud Functions)
     const candidates = [
-      path.resolve(__dirname, "..", "..", "prompts", "faqSystem.prompt"),                // dev ‑ ts-node
-      path.resolve(__dirname, "..", "..", "..", "..", "..", "prompts", "faqSystem.prompt"), // compiled lib/
-      path.resolve(process.cwd(), "prompts", "faqSystem.prompt"),                        // cwd fallback
+      path.resolve(__dirname, "..", "faqSystem.prompt"),          // dev (ts-node)  …/src/firebase/functions/genkit →
+      path.resolve(__dirname, "..", "..", "faqSystem.prompt"),    // compiled …/lib/genkit →
+      path.resolve(process.cwd(), "src", "firebase", "functions", "faqSystem.prompt"), // when cwd = repo root
+      path.resolve(process.cwd(), "faqSystem.prompt"),            // when cwd = functions/
     ];
 
     const fp = candidates.find((p) => existsSync(p));
