@@ -9,7 +9,7 @@ export default function Header() {
 				"fixed inset-x-0 top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm"
 			)}
 		>
-			<div className="container flex items-center justify-between py-4">
+			<div className="container flex items-center justify-center gap-6 py-4">
 				<Link href="/" className="font-semibold text-base tracking-tight">
 					SkiGaudi
 				</Link>
