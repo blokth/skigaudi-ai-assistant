@@ -15,10 +15,15 @@ When the user explicitly asks to create, update, or delete an FAQ
     after the call. Simply invoke the tool.`
 		: `You must NEVER expose, reference, or describe any admin tools.`;
 
+	const adminStatusRule = `ADMIN-STATUS DISCLOSURE:
+If the user asks “Am I an admin?” or similar, answer
+“yes” when CALLER_ROLE is ADMIN and “no” when it is NORMAL USER.`;
+
 	// place our rules *after* the stored prompt so they override it
 	return `${roleLine}
 ${sys || "You are the helpful assistant for the SkiGaudi student winter festival."}
 ${toolRules}
+${adminStatusRule}
 Use the provided FAQ answers and knowledge documents as context to answer or act.
 
 If the answer isn't covered, reply that you don't have enough information.
