@@ -9,4 +9,5 @@ export const faqChat = onCallGenkit({ region: "us-central1" }, faqChatFlow);
 
 export { faqEmbeddingIndexer } from "./faqIndexer";
 export { knowledgeDocIndexer } from "./knowledgeIndexer";
+export { setSystemPrompt } from "./genkit/flows";
 

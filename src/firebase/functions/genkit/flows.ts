@@ -1,4 +1,5 @@
 import { genkit, z } from "genkit";
+import { mcp } from "@genkit-ai/mcp";
 import {
   vertexAI,
   gemini20Flash,
@@ -39,6 +40,7 @@ if (!admin.apps.length) {
 
 const ai = genkit({
   plugins: [
+    mcp(), // NEW
     // Load the Vertex AI plugin. You can optionally specify your project ID
     // by passing in a config object; if you don't, the Vertex AI plugin uses
     // the value from the GCLOUD_PROJECT environment variable.
@@ -148,7 +150,24 @@ const deleteFaq = ai.defineTool(
   }
 );
 
+const setSystemPrompt = ai.defineTool(
+  {
+    name: "setSystemPrompt",
+    description: "Change the chat assistant’s system-prompt text.",
+    inputSchema : z.object({
+      content: z.string().describe("The new system-prompt"),
+    }),
+    outputSchema: z.string(),
+  },
+  async ({ content }) => {
+    await getFirestore()
+      .doc("systemPrompts/chatPrompt")
+      .set({ content }, { merge: true });
+    return "System prompt updated.";
+  }
+);
 export { createFaq, updateFaq, deleteFaq };      // NEW
+export { setSystemPrompt };          // NEW
 
 async function loadSystemPrompt(): Promise<string> {
   const snap = await getFirestore().doc("systemPrompts/chatPrompt").get();
@@ -176,7 +195,7 @@ const faqChatFlow = ai.defineFlow(
     // 2. expose CRUD tools only for authenticated non-anonymous users
     const isAdmin =
       context?.auth?.token?.firebase?.sign_in_provider !== "anonymous";
-    const tools   = isAdmin ? [createFaq, updateFaq, deleteFaq] : [];
+    const tools   = isAdmin ? [createFaq, updateFaq, deleteFaq, setSystemPrompt] : [];
 
     // 3. generate answer / handle tool-calls
     const { response, stream } = ai.generateStream({
