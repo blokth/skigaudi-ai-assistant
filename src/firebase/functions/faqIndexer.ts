@@ -50,11 +50,27 @@ export async function indexFaqDocument(
 	}
 }
 
+/**
+ * Remove a document from the dev-local vector store.
+ * No-op when Firestore vectors are used.
+ */
+export async function unindexFaq(id: string) {
+  if (!USE_LOCAL_VECTORSTORE) return;
+
+  // devLocalVectorstore: delete by id
+  await ai.index({ indexer: faqDevIndexer, deleteIds: [id] });
+}
+
 export const faqEmbeddingIndexer = onDocumentWritten(
 	{ document: "faqs/{docId}", region: "us-central1" },
 	async (event) => {
 		const afterSnap = event.data?.after;
-		if (!afterSnap) return;
+		// Handle document DELETE → remove from vector store
+		if (!afterSnap?.exists) {
+			const beforeSnap = event.data?.before;
+			if (beforeSnap?.id) await unindexFaq(beforeSnap.id);
+			return;
+		}
 		const data = afterSnap.data();
 		if (!data) return;
 

@@ -74,6 +74,7 @@ export const deleteFaq = ai.defineTool(
     assertAdmin(context);
 
     await getFirestore().collection("faqs").doc(id).delete();
+    await unindexFaq(id);
     return `FAQ ${id} deleted.`;
   },
 );
