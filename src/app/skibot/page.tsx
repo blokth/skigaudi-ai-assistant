@@ -1,0 +1,106 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { ref, uploadBytes } from "firebase/storage";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/context/AuthContext";
+import { db, storage } from "@/firebase/client";
+
+export default function SkiBotConfig() {
+  const { isAdmin, loading } = useAuth();
+
+  /* ── system prompt ── */
+  const [prompt, setPrompt] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const loadPrompt = useCallback(async () => {
+    const snap = await getDoc(doc(db, "systemPrompts", "chatPrompt"));
+    setPrompt(snap.exists() ? snap.data()?.content ?? "" : "");
+  }, []);
+
+  useEffect(() => { loadPrompt(); }, [loadPrompt]);
+
+  const savePrompt = async () => {
+    if (!isAdmin) return;
+    setSaving(true);
+    await setDoc(doc(db, "systemPrompts", "chatPrompt"), {
+      content: prompt,
+      updatedAt: serverTimestamp(),
+    });
+    setSaving(false);
+    alert("System prompt saved");
+  };
+
+  /* ── knowledge upload ── */
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState("");
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (
+      !["application/pdf", "text/plain", "text/markdown"].includes(file.type) &&
+      !/\.(pdf|txt|md)$/i.test(file.name)
+    ) {
+      setErr("Unsupported file type.");
+      return;
+    }
+
+    setUploading(true);
+    setErr("");
+    try {
+      await uploadBytes(ref(storage, `knowledge/${file.name}`), file);
+      alert("File uploaded successfully and will be processed shortly.");
+    } catch {
+      setErr("Upload failed.");
+    } finally {
+      setUploading(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  if (loading)
+    return <main className="min-h-screen flex items-center justify-center">Loading…</main>;
+  if (!isAdmin)
+    return <main className="min-h-screen flex items-center justify-center">Not authorized.</main>;
+
+  const box = "space-y-4 p-6 bg-card/60 border rounded-xl";
+
+  return (
+    <main className="min-h-screen flex flex-col items-center px-4 py-16">
+      <h1 className="text-4xl md:text-5xl font-bold text-center mt-10 mb-14">Configure SkiBot</h1>
+
+      <div className="w-full max-w-2xl space-y-12">
+        {/* prompt */}
+        <section className={box}>
+          <h2 className="text-2xl font-semibold">System prompt</h2>
+          <Textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            style={{ height: "8rem" }}
+          />
+          <Button variant="secondary" onClick={savePrompt} disabled={saving}>
+            {saving ? "Saving…" : "Save prompt"}
+          </Button>
+        </section>
+
+        {/* knowledge docs */}
+        <section className={box}>
+          <h2 className="text-2xl font-semibold">Upload knowledge document</h2>
+          <input
+            type="file"
+            accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
+            onChange={onFile}
+            disabled={uploading}
+            className="block w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
+          />
+          {err && <p className="text-red-500 text-sm">{err}</p>}
+          {uploading && <p className="text-sm">Uploading…</p>}
+        </section>
+      </div>
+    </main>
+  );
+}

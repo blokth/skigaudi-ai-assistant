@@ -1,18 +1,14 @@
 "use client";
 
 import {
-	addDoc,
-	collection,
-	deleteDoc,
-	doc,
-	getDoc,
-	onSnapshot,
-	serverTimestamp,
-	setDoc,
-	updateDoc,
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  updateDoc,
 } from "firebase/firestore";
-import { ref, uploadBytes } from "firebase/storage";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -40,21 +36,10 @@ export default function FAQPage() {
 	const [question, setQuestion] = useState("");
 	const [answer, setAnswer] = useState("");
 	const [saving, setSaving] = useState(false);
-	const [uploading, setUploading] = useState(false);
-	const [uploadError, setUploadError] = useState("");
-
-	const [sysPrompt, setSysPrompt] = useState("");
-	const [sysSaving, setSysSaving] = useState(false);
 
 	const sectionClass = "space-y-4 p-6 bg-card/60 border rounded-xl";
 
 	// admin helpers
-
-	const loadSysPrompt = useCallback(async () => {
-		const snap = await getDoc(doc(db, "systemPrompts", "chatPrompt"));
-		const data = snap.data() as { content?: string } | undefined;
-		setSysPrompt(snap.exists() ? data?.content ?? "" : "");
-	}, []);
 
 	useEffect(() => {
 		const unsub = onSnapshot(collection(db, "faqs"), (snap) => {
@@ -67,9 +52,8 @@ export default function FAQPage() {
 			setLoading(false);
 		});
 
-		loadSysPrompt();
 		return () => unsub();
-	}, [loadSysPrompt]);
+	}, []);
 
 	const saveSysPrompt = async () => {
 		if (!isAdmin) return;
@@ -151,25 +135,6 @@ export default function FAQPage() {
 			</h1>
 			<div className="w-full max-w-2xl space-y-12">
 
-				{/* Admin: Edit system prompt */}
-				{isAdmin && (
-					<section className={sectionClass}>
-						<h2 className="text-2xl font-semibold">System prompt</h2>
-						<Textarea
-							value={sysPrompt}
-							onChange={(e) => setSysPrompt(e.target.value)}
-							style={{ height: "8rem" }}
-						/>
-						<Button
-							variant="secondary"
-							onClick={saveSysPrompt}
-							disabled={sysSaving}
-						>
-							{sysSaving ? "Saving…" : "Save prompt"}
-						</Button>
-					</section>
-				)}
-
 				{/* Admin: Add new FAQ */}
 				{isAdmin && (
 					<section className={sectionClass}>
@@ -189,23 +154,6 @@ export default function FAQPage() {
 						<Button variant="secondary" onClick={createFaq} disabled={saving}>
 							{saving ? "Saving…" : "Save"}
 						</Button>
-					</section>
-				)}
-
-				{/* Admin: Upload knowledge document */}
-				{isAdmin && (
-					<section className={sectionClass}>
-						<h2 className="text-2xl font-semibold">Upload knowledge document</h2>
-						<input
-							type="file"
-							accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
-							onChange={handleFileSelect}
-							disabled={uploading}
-							className="block w-full bg-transparent border border-gray-300 dark:border-gray-600
-						   rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500"
-						/>
-						{uploadError && <p className="text-red-500 text-sm">{uploadError}</p>}
-						{uploading && <p className="text-sm">Uploading…</p>}
 					</section>
 				)}
 
