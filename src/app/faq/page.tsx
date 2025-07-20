@@ -217,7 +217,7 @@ export default function FAQPage() {
             <AccordionItem key={faq.id} value={faq.id}>
               <AccordionTrigger>{faq.question}</AccordionTrigger>
               <AccordionContent>
-                <div className="prose dark:prose-invert max-w-none">{faq.answer}</div>
+                <div className="prose dark:prose-invert max-w-none text-base md:text-lg">{faq.answer}</div>
                 {isAdmin && (
                   <div className="flex gap-2 mt-4">
                     <Button size="sm" variant="outline" onClick={() => editFaq(faq)}>
