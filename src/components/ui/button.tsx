@@ -1,6 +1,6 @@
-import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -57,46 +57,3 @@ function Button({
 }
 
 export { Button, buttonVariants };
-import { Slot } from "@radix-ui/react-slot";
-import tv from "@/lib/tv";
-import { cn } from "@/lib/utils";
-
-const button = tv({
-	base: "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none disabled:opacity-50",
-	variants: {
-		variant: {
-			primary: "bg-festival-yellow text-slate hover:bg-yellow-300",
-			secondary: "bg-festival-sky text-white hover:bg-sky-500",
-			ghost: "bg-transparent hover:bg-black/5 dark:hover:bg-white/10",
-		},
-		size: {
-			sm: "px-3 py-1.5",
-			md: "px-4 py-2",
-			lg: "px-6 py-3",
-			icon: "p-2",
-		},
-	},
-	defaultVariants: {
-		variant: "primary",
-		size: "md",
-	},
-});
-
-export interface ButtonProps
-	extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-	asChild?: boolean;
-	variant?: keyof typeof button.variants.variant;
-	size?: keyof typeof button.variants.size;
-}
-export function Button({
-	className,
-	variant,
-	size,
-	asChild,
-	...props
-}: ButtonProps) {
-	const Comp: any = asChild ? Slot : "button";
-	return (
-		<Comp className={cn(button({ variant, size }), className)} {...props} />
-	);
-}
