@@ -1,5 +1,5 @@
 import { genkit, z } from "genkit";
-import { mcp } from "@genkit-ai/mcp";
+import { createMcpHost } from "@genkit-ai/mcp";
 import {
   vertexAI,
   gemini20Flash,
@@ -38,9 +38,18 @@ if (!admin.apps.length) {
   });
 }
 
+const mcpHost = createMcpHost({
+  name: "skigaudi-mcp-host",
+  mcpServers: {
+    memory: {
+      command: "npx",
+      args: ["-y", "@modelcontextprotocol/server-memory"],
+    },
+  },
+});
+
 const ai = genkit({
   plugins: [
-    mcp(), // NEW
     // Load the Vertex AI plugin. You can optionally specify your project ID
     // by passing in a config object; if you don't, the Vertex AI plugin uses
     // the value from the GCLOUD_PROJECT environment variable.
@@ -166,9 +175,6 @@ const setSystemPrompt = ai.defineTool(
     return "System prompt updated.";
   }
 );
-export { createFaq, updateFaq, deleteFaq };      // NEW
-export { setSystemPrompt };          // NEW
-
 async function loadSystemPrompt(): Promise<string> {
   const snap = await getFirestore().doc("systemPrompts/chatPrompt").get();
   return (snap.data()?.content ?? "").trim();
@@ -187,6 +193,10 @@ const faqChatFlow = ai.defineFlow(
     // 0. get dynamic system-prompt
     const systemPrompt = await loadSystemPrompt();
 
+    // Pull in any tools / resources supplied by connected MCP servers
+    const externalTools      = await mcpHost.getActiveTools(ai);
+    const externalResources  = await mcpHost.getActiveResources(ai);
+
     // 1. vector-retrieve context docs
     const faqDocs = await ai.retrieve({ retriever: faqRetriever, query: question, options: { k: 4 } });
     const knowledgeDocs = await ai.retrieve({ retriever: knowledgeRetriever, query: question, options: { k: 4 } });
@@ -195,23 +205,28 @@ const faqChatFlow = ai.defineFlow(
     // 2. expose CRUD tools only for authenticated non-anonymous users
     const isAdmin =
       context?.auth?.token?.firebase?.sign_in_provider !== "anonymous";
-    const tools   = isAdmin ? [createFaq, updateFaq, deleteFaq, setSystemPrompt] : [];
+    const tools = isAdmin
+      ? [createFaq, updateFaq, deleteFaq, setSystemPrompt, ...externalTools]
+      : externalTools;
 
     // 3. generate answer / handle tool-calls
-    const { response, stream } = ai.generateStream({
-      model: gemini20Flash,
-      prompt: `${systemPrompt || "You are the helpful assistant for the SkiGaudi student winter festival."}
+    const prompt = `${systemPrompt || "You are the helpful assistant for the SkiGaudi student winter festival."}
 Use the provided FAQ answers and knowledge documents as context to answer or act.
 If the answer isn't covered, reply that you don't have enough information.
-Question: ${question}`,
+Question: ${question}`;
+    const { response, stream } = ai.generateStream({
+      model: gemini20Flash,
+      prompt,
       docs,
       tools,
+      resources: externalResources,
       config: { temperature: 0.8 },
     });
 
     for await (const chunk of stream) sendChunk(chunk.text);
+    await mcpHost.close();
     return (await response).text;
   }
 );
 
-export { faqChatFlow };
+export { createFaq, updateFaq, deleteFaq, setSystemPrompt, faqChatFlow };
