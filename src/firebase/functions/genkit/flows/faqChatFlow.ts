@@ -6,7 +6,6 @@ import { adminTools } from "../tools";
 import {
   getExternalTools,
   getExternalResources,
-  closeMcpHost,
 } from "../mcp";
 
 function buildSystemPrompt(stored: string, isAdmin: boolean) {
@@ -43,107 +42,34 @@ export const faqChatFlow = ai.defineFlow(
     streamSchema: z.string(),
   },
   async (history, { context }) => {
-    const question =
-      history.length > 0 ? history[history.length - 1].content : "";
-
-    const sysPrompt   = await loadSystemPrompt();
-    const docs        = await getContextDocs(question);
-    const resources   = await getExternalResources();
-    const extTools    = await getExternalTools();
-
-    /* ───────── auth ───────── */
     const isAdmin =
       context?.auth?.token?.firebase?.sign_in_provider === "password";
 
-    // Enrich the context that will be propagated to subsequent model
-    // generations and tool invocations with the computed admin flag.
     const nextContext = { ...context, isAdmin };
 
-    /* ───────── tool gate ───── */
-    // Only expose/run tools when caller is ADMIN
+    const [sysPrompt, docs, resources, extTools] = await Promise.all([
+      loadSystemPrompt(),
+      getContextDocs(history.at(-1)?.content ?? ""),
+      getExternalResources(),
+      getExternalTools(),
+    ]);
+
     const allowedTools = isAdmin ? [...adminTools, ...extTools] : [];
 
-    /* ───────── messages ────── */
-    // prepend ONE system-message so Gemini never receives a second one
-    const llmMsgs = [
-      {
-        role: "system" as const,
-        content: [{ text: buildSystemPrompt(sysPrompt, isAdmin) }],
-      },
-      ...history.map((m) => ({
+    const { text } = await ai.generate({
+      system: buildSystemPrompt(sysPrompt, isAdmin),
+      messages: history.map(m => ({
         role: m.role as "user" | "model",
-        content: [{ text: m.content }],
+        content: m.content,
       })),
-    ];
-
-    /* ───────── generation loop with manual tool handling ───────── */
-    const opts: Parameters<typeof ai.generate>[0] = {
-      messages: llmMsgs,
       docs,
       resources,
       tools: allowedTools,
       maxTurns: 5,
-      returnToolRequests: true, // we will decide if they run
-      context: nextContext,     // ← propagate auth + isAdmin to tools
+      context: nextContext,
       config: { temperature: 0.8 },
-    };
+    });
 
-    try {
-      // loop until the model stops asking for tools
-      /* eslint-disable no-constant-condition */
-      while (true) {
-        const { text, messages, toolRequests } = await ai.generate(opts);
-
-        // Normal completion – no tool calls requested
-        if (!toolRequests?.length) return text;
-
-        // Not admin → never execute tools, just refuse
-        if (!isAdmin) {
-          return "Sorry, you don't have permission to perform that action.";
-        }
-
-        // Admin → execute requested tools and feed results back
-        const toolResponses = await Promise.all(
-          toolRequests.map(async (part) => {
-            const toolImpl = allowedTools.find(
-              (t) => t.name === part.toolRequest.name,
-            );
-            if (!toolImpl)
-              return {
-                toolResponse: {
-                  name: part.toolRequest.name,
-                  ref: part.toolRequest.ref,
-                  output: "Tool not available.",
-                },
-              };
-
-            const output = await (toolImpl as any)(
-              part.toolRequest.input,
-              { context: nextContext },
-            );
-            return {
-              toolResponse: {
-                name: part.toolRequest.name,
-                ref: part.toolRequest.ref,
-                output,
-              },
-            };
-          }),
-        );
-
-        // Continue the loop with the new messages + tool results
-        opts.messages = messages;
-
-        // After the first turn we've already supplied docs/resources, so drop
-        // them to avoid mixing FunctionResponse parts with other part types.
-        delete (opts as any).docs;
-        delete (opts as any).resources;
-
-        // Supply executed tool results back to the model via `prompt`.
-        opts.prompt = toolResponses;
-      }
-    } finally {
-      await closeMcpHost();
-    }
+    return text;
   },
 );
