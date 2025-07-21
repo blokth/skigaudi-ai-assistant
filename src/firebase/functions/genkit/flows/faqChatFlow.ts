@@ -47,18 +47,9 @@ When the user explicitly asks to create, update, or delete an FAQ
 
     const allowedTools = isAdmin ? [...adminTools, ...extTools] : [...extTools];
 
-    const docText = (d: any) =>
-      d?.pageContent ?? d?.content ?? d?.text ?? d?.raw ?? "";
-
-    const docsText =
-      contextDocs.length > 0
-        ? contextDocs.map((d: any) => `• ${docText(d)}`).join("\n")
-        : "";
-
     const sysPrompt = await renderSystemPrompt({
       callerRole,
       toolRules: isAdmin ? adminToolRules : userToolRules,
-      contextDocs: docsText || undefined,
     });
 
     const { text } = await ai.generate({
@@ -68,6 +59,7 @@ When the user explicitly asks to create, update, or delete an FAQ
         content: [{ text: m.content }],
       })),
       tools: allowedTools,
+      docs: contextDocs,
       maxTurns: 5,
       context: nextContext,
       config: { temperature: 0.8 },
