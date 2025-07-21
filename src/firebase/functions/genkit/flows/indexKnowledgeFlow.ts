@@ -53,7 +53,7 @@ export const indexKnowledge = ai.defineFlow(
   async ({ filePath }: { filePath: string }) => {
     try {
       const text = await loadText(filePath);
-      const chunks = ai.run("chunk-document-text", () =>
+      const chunks = await ai.run("chunk-document-text", () =>
         chunk(text, CHUNKING_CONFIG),
       );
 
