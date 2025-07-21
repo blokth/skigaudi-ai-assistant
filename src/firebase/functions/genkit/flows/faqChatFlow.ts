@@ -10,7 +10,7 @@ import {
 // Helper to determine admin status via custom claim or legacy rule
 function isAdminUser(ctx: any): boolean {
   return ctx?.auth?.token?.admin === true ||
-         ctx?.auth?.token?.firebase?.sign_in_provider === "password";
+    ctx?.auth?.token?.firebase?.sign_in_provider === "password";
 }
 
 
