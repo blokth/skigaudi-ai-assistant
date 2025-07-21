@@ -44,7 +44,10 @@ export const indexKnowledge = ai.defineFlow(
           ? await ai.run("extract-text", () => extractTextFromPdf(filePath))
           : await readFile(filePath, "utf8");
 
-      const chunks = await ai.run("chunk", () => chunk(text, chunkingConfig));
+      const chunks = await ai.run<string[]>(
+        "chunk-it",
+        async () => chunk(text, chunkingConfig)
+      );
       const documents = chunks.map((c) => Document.fromText(c, { filePath }));
 
       await ai.index({ indexer: knowledgeIndexer, documents });
