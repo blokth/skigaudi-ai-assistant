@@ -8,7 +8,7 @@ import * as fs from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import pdfParse from "pdf-parse";
-import { chunk as chunkText } from "llm-chunk";
+import { chunk } from "llm-chunk";
 import { devLocalIndexerRef } from "@genkit-ai/dev-local-vectorstore";
 import { Document } from "genkit/retriever";
 
@@ -121,21 +121,24 @@ export const knowledgeDocIndexer = onObjectFinalized(
 		if (!text.trim()) return;
 
 		// Split the document into smaller overlapping chunks for higher-quality retrieval.
-		const chunks: string[] = chunkText(text, {
-			minLength: 200,
-			maxLength: 1500,
-			overlap: 200,
+		const chunks: string[] = chunk(text, {
+			minLength: 1000,
+			maxLength: 2000,
+			overlap: 100,
 			splitter: "sentence",
+			delimiters: "",
 		});
 
-		// Embed each chunk – `ai.embed` expects a single string, so loop
-		const embedResults = await Promise.all(
-			chunks.map(
-				async (c) =>
-					(await ai.embed({ embedder: textEmbedding005, content: c }))[0]
-						.embedding,
-			),
-		);
+		let embedResults: number[][] = [];
+		if (!USE_LOCAL_VECTORSTORE) {
+			embedResults = await Promise.all(
+				chunks.map(
+					async (c) =>
+						(await ai.embed({ embedder: textEmbedding005, content: c }))[0]
+							.embedding,
+				),
+			);
+		}
 
 		if (USE_LOCAL_VECTORSTORE) {
 			const documents = chunks.map((chunk, idx) =>
