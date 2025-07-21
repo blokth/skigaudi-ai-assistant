@@ -10,7 +10,7 @@ import pdfParse from "pdf-parse";
 /* --- Configuration -------------------------------------------------- */
 const KNOWLEDGE_INDEXER_REF = devLocalIndexerRef("knowledge");
 const CHUNKING_CONFIG = {
-  minLength: 1000,
+  minLength: 300,
   maxLength: 2000,
   overlap: 100,
   splitter: "sentence" as const,
@@ -53,10 +53,15 @@ export const indexKnowledge = ai.defineFlow(
   async ({ filePath }: { filePath: string }) => {
     try {
       const text = await loadText(filePath);
-      const chunks = await ai.run<string[]>(
+      let chunks = await ai.run<string[]>(
         "chunk-document-text",
-        async () => chunk(text, CHUNKING_CONFIG)
+        async () => chunk(text, CHUNKING_CONFIG),
       );
+
+      // Fallback: ensure we always have something to index
+      if (chunks.length === 0) {
+        chunks = [text];
+      }
 
       const documents = chunks.map((c: string) =>
         Document.fromText(c, { filePath }),
