@@ -1,4 +1,4 @@
-import { z } from "genkit";
+import { z, defineFlow, run } from "genkit";
 import { ai } from "../core";                     // ← fixed
 import { devLocalIndexerRef } from "@genkit-ai/dev-local-vectorstore";
 import { Document } from "genkit/retriever";
@@ -6,7 +6,6 @@ import { chunk } from "llm-chunk";
 import { readFile } from "fs/promises";
 import path from "node:path";
 import pdfParse from "pdf-parse";
-import { defineFlow, run } from "genkit/flow";
 
 /* --- Configuration -------------------------------------------------- */
 const KNOWLEDGE_INDEXER_REF = devLocalIndexerRef("knowledge");
@@ -51,14 +50,14 @@ export const indexKnowledge = defineFlow(
       error: z.string().optional(),
     }),
   },
-  async ({ filePath }) => {
+  async ({ filePath }: { filePath: string }) => {
     try {
       const text = await loadText(filePath);
       const chunks = await run("chunk-document-text", () =>
         chunk(text, CHUNKING_CONFIG),
       );
 
-      const documents = chunks.map((c) =>
+      const documents = chunks.map((c: string) =>
         Document.fromText(c, { filePath }),
       );
 
