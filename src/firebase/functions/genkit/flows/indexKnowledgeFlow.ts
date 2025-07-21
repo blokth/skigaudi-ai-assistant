@@ -1,4 +1,4 @@
-import { z, defineFlow, run } from "genkit";
+import { z } from "genkit";
 import { ai } from "../core";                     // ← fixed
 import { devLocalIndexerRef } from "@genkit-ai/dev-local-vectorstore";
 import { Document } from "genkit/retriever";
@@ -29,7 +29,7 @@ async function loadText(filePath: string): Promise<string> {
   const ext = path.extname(resolvedPath).toLowerCase();
 
   if (ext === ".pdf") {
-    return run("extract-pdf-text", () => extractTextFromPdf(resolvedPath));
+    return ai.run("extract-pdf-text", () => extractTextFromPdf(resolvedPath));
   }
   if (ext === ".txt" || ext === ".md") {
     return readFile(resolvedPath, "utf8");
@@ -38,7 +38,7 @@ async function loadText(filePath: string): Promise<string> {
 }
 
 /* --- Main flow ------------------------------------------------------- */
-export const indexKnowledge = defineFlow(
+export const indexKnowledge = ai.defineFlow(
   {
     name: "indexKnowledge",
     inputSchema: z.object({
@@ -53,7 +53,7 @@ export const indexKnowledge = defineFlow(
   async ({ filePath }: { filePath: string }) => {
     try {
       const text = await loadText(filePath);
-      const chunks = await run("chunk-document-text", () =>
+      const chunks = await ai.run("chunk-document-text", () =>
         chunk(text, CHUNKING_CONFIG),
       );
 
