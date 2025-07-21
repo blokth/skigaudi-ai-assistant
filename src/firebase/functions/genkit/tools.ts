@@ -7,12 +7,12 @@ import { storage } from "firebase-admin";
 
 /* ─ helper ────────────────────────────────────────────────────────── */
 function isAdmin(context: any): boolean {
-  // When invoked from Firebase Functions the Auth context is attached
-  // to `context.auth` following the Cloud Functions convention.
-  // A regular (non-anonymous) sign-in provider of "password" denotes an
-  // authenticated admin user in this project.
   if (context?.isAdmin !== undefined) return !!context.isAdmin;
 
+  // • primary rule: custom claim “admin” must be true
+  if (context?.auth?.token?.admin === true) return true;
+
+  // • fallback for legacy accounts (password provider = admin)
   return context?.auth?.token?.firebase?.sign_in_provider === "password";
 }
 

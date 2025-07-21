@@ -7,6 +7,12 @@ import {
   getExternalTools,
 } from "../mcp";
 
+// Helper to determine admin status via custom claim or legacy rule
+function isAdminUser(ctx: any): boolean {
+  return ctx?.auth?.token?.admin === true ||
+         ctx?.auth?.token?.firebase?.sign_in_provider === "password";
+}
+
 
 export const faqChatFlow = ai.defineFlow(
   {
@@ -18,8 +24,7 @@ export const faqChatFlow = ai.defineFlow(
     streamSchema: z.string(),
   },
   async (history, { context }) => {
-    const isAdmin =
-      context?.auth?.token?.firebase?.sign_in_provider === "password";
+    const isAdmin = isAdminUser(context);
 
     const callerRole = isAdmin ? "ADMIN" : "NORMAL USER";
 
@@ -40,7 +45,7 @@ When the user explicitly asks to create, update, or delete an FAQ
       getExternalTools(),
     ]);
 
-    const allowedTools = isAdmin ? [...adminTools, ...extTools] : [];
+    const allowedTools = isAdmin ? [...adminTools, ...extTools] : [...extTools];
 
     const docText = (d: any) =>
       d?.pageContent ?? d?.content ?? d?.text ?? d?.raw ?? "";
