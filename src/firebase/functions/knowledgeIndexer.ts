@@ -83,7 +83,7 @@ export async function unindexKnowledge(id: string) {
 }
 
 export const knowledgeDocIndexer = onObjectFinalized(
-  { region: "us-central1", bucket: BUCKET_NAME },
+  { region: "us-central1" },
   async (event) => {
 		const object = event.data;
 		if (!object) return;
