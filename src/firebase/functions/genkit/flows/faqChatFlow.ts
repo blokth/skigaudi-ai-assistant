@@ -42,11 +42,12 @@ When the user explicitly asks to create, update, or delete an FAQ
 
     const allowedTools = isAdmin ? [...adminTools, ...extTools] : [];
 
+    const docText = (d: any) =>
+      d?.pageContent ?? d?.content ?? d?.text ?? d?.raw ?? "";
+
     const docsText =
       contextDocs.length > 0
-        ? contextDocs
-            .map((d: any) => `• ${d.pageContent ?? d.content ?? ""}`)
-            .join("\n")
+        ? contextDocs.map((d: any) => `• ${docText(d)}`).join("\n")
         : "";
 
     const sysPrompt = await renderSystemPrompt({
