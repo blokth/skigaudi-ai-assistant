@@ -1,4 +1,5 @@
 import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { z } from "genkit";
 import { indexFaqDocument } from "../faqIndexer";
 import { assertAdmin } from "./auth";
@@ -85,4 +86,27 @@ export const setSystemPrompt = ai.defineTool(
 	},
 );
 
-export const adminTools = [createFaq, updateFaq, deleteFaq, setSystemPrompt];
+export const deleteKnowledgeDoc = ai.defineTool(
+  {
+    name: "deleteKnowledgeDoc",
+    description:
+      "Delete a knowledge document from Cloud Storage (e.g. `CV.pdf`). " +
+      "All indexed chunks will be removed automatically by the onDelete trigger.",
+    inputSchema: z.object({ name: z.string() }),
+    ...common,
+  },
+  async ({ name }, { context }) => {
+    assertAdmin(context);
+
+    await getStorage().bucket().file(`knowledge/${name}`).delete();
+    return `Knowledge document ${name} deleted.`;
+  },
+);
+
+export const adminTools = [
+  createFaq,
+  updateFaq,
+  deleteFaq,
+  setSystemPrompt,
+  deleteKnowledgeDoc,
+];
