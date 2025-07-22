@@ -1,9 +1,8 @@
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 
-import { applicationDefault, initializeApp } from "firebase-admin/app";
-import { FieldValue, getFirestore, type DocumentSnapshot } from "firebase-admin/firestore";
-import { getStorage } from "firebase-admin/storage";
+import { FieldValue, type DocumentSnapshot } from "firebase-admin/firestore";
+import * as admin from "firebase-admin";
 import * as fs from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -12,9 +11,8 @@ import { chunk } from "llm-chunk";
 import { ai, EMBEDDER } from "./genkit/core";
 
 
-const app = initializeApp({ credential: applicationDefault() });
-const firestore = getFirestore(app);
-const storage = getStorage(app);
+const firestore = admin.firestore();
+const storage  = admin.storage();
 
 const indexConfig = {
   collection: "knowledge",
