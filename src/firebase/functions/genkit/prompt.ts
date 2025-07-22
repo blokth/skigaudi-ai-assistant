@@ -1,58 +1,78 @@
 import Handlebars from "handlebars";
 import { readFileSync, existsSync } from "node:fs";
-import path from "node:path";
+import { resolve } from "node:path";
 import { getFirestore } from "firebase-admin/firestore";
 
-let cache: { ts: number; template: Handlebars.TemplateDelegate } | null = null;
-const TTL = 30_000;
+/**
+ * Cache compiled template for a short time to avoid unnecessary IO.
+ */
+const CACHE_TTL = 30_000; // 30 s
+let cache: { ts: number; tpl: Handlebars.TemplateDelegate } | null = null;
 
-// change export name
-export async function renderSystemPrompt(
-  vars: { callerRole: string; toolRules: string; contextDocs?: string },
-): Promise<string> {
-  if (cache && Date.now() - cache.ts < TTL && cache.template) {
-    return cache.template(vars);
+/**
+ * Render the SkiGaudi system prompt.
+ *
+ * Order of precedence:
+ *   1. Firestore document `systemPrompts/chatPrompt`
+ *   2. Local `system.prompt` file residing next to the Genkit sources/bundle
+ *   3. Local `system.prompt` from repo root or `functions/` folder
+ */
+export async function renderSystemPrompt(vars: {
+  callerRole: string;
+  toolRules: string;
+  contextDocs?: string;
+}): Promise<string> {
+  // serve from cache if still fresh
+  if (cache && Date.now() - cache.ts < CACHE_TTL) {
+    return cache.tpl(vars);
   }
 
-  // 1) try Firestore override
+  // fetch prompt text
+  const promptText =
+    (await loadFromFirestore()) ??
+    readFileSync(resolvePromptPath(), "utf8");
+
+  // remove YAML front-matter (`--- … ---`)
+  const templateBody = stripFrontMatter(promptText);
+
+  // compile & cache
+  const tpl = Handlebars.compile(templateBody, { noEscape: true });
+  cache = { ts: Date.now(), tpl };
+
+  return tpl(vars);
+}
+
+/* -------------------------------------------------------------------------- */
+
+async function loadFromFirestore(): Promise<string | null> {
   const snap = await getFirestore().doc("systemPrompts/chatPrompt").get();
-  let txt = (snap.data()?.content ?? "").trim();
+  const content = (snap.data()?.content ?? "").trim();
+  return content || null;
+}
 
-  // 2) fall back to repo default
-  if (!txt) {
-    // try a list of possible locations (works in dev, build, and Cloud Functions)
-    const candidates = [
-      path.resolve(__dirname, "..", "faqSystem.prompt"),          // dev (ts-node)  …/src/firebase/functions/genkit →
-      path.resolve(__dirname, "..", "..", "faqSystem.prompt"),    // compiled …/lib/genkit →
-      path.resolve(process.cwd(), "src", "firebase", "functions", "faqSystem.prompt"), // when cwd = repo root
-      path.resolve(process.cwd(), "faqSystem.prompt"),            // when cwd = functions/
-    ];
+function resolvePromptPath(): string {
+  const candidates = [
+    // compiled or ts-node execution
+    resolve(__dirname, "..", "system.prompt"),
+    // repo root execution
+    resolve(process.cwd(), "src/firebase/functions/system.prompt"),
+    // inside functions/ folder
+    resolve(process.cwd(), "system.prompt"),
+  ];
 
-    const fp = candidates.find((p) => existsSync(p));
-    if (!fp) {
-      throw new Error(
-        "Cannot locate prompts/faqSystem.prompt – checked:\n" + candidates.join("\n"),
-      );
-    }
-    txt = readFileSync(fp, "utf8").trim();
-  }
-
-  // 3) basic dotprompt-format assertion
-  if (!txt.startsWith("---"))
+  const found = candidates.find((p) => existsSync(p));
+  if (!found) {
     throw new Error(
-      "System prompt must be valid .prompt content (missing YAML front-matter).",
+      "Cannot locate system.prompt – checked:\n" + candidates.join("\n"),
     );
+  }
+  return found;
+}
 
-  // After obtaining `txt` (the full .prompt file contents) …
-  const secondDash = txt.indexOf("---", 3);
-  if (secondDash === -1) throw new Error("Malformed .prompt file.");
-
-  const templateStr = txt.slice(secondDash + 3).trimStart();
-  const compiled =
-    cache && cache.template
-      ? cache.template
-      : Handlebars.compile(templateStr, { noEscape: true });
-
-  cache = { ts: Date.now(), template: compiled };
-  return compiled(vars);
+function stripFrontMatter(txt: string): string {
+  const frontMatter = /^---[\s\S]*?---\s*/;
+  if (!frontMatter.test(txt)) {
+    throw new Error("System prompt must contain YAML front-matter.");
+  }
+  return txt.replace(frontMatter, "");
 }
