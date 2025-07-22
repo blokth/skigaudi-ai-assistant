@@ -3,7 +3,7 @@
 import { httpsCallable } from "firebase/functions";
 import { ref, uploadBytes } from "firebase/storage";
 import { MessageCircle, Paperclip, Send } from "lucide-react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -17,9 +17,16 @@ type ChatMsg = {
   attachmentName?: string;    // when an uploaded file should be shown
 };
 
+// small helper to append a message
+const append =
+  (set: React.Dispatch<React.SetStateAction<ChatMsg[]>>) =>
+  (msg: ChatMsg) =>
+    set((prev) => [...prev, msg]);
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMsgs] = useState<ChatMsg[]>([]);
+  const push = append(setMsgs);
   const [sending, setSending] = useState(false);
 
   const [input, setInput] = useState("");
@@ -43,79 +50,43 @@ export default function ChatWidget() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // show the attachment in the chat UI
-    setMsgs((p) => [
-      ...p,
-      {
-        id: crypto.randomUUID(),
-        author: "user",
-        attachmentName: file.name,
-      },
-    ]);
+    push({ id: crypto.randomUUID(), author: "user", attachmentName: file.name });
 
-    // accept only PDF, TXT or MD
-    if (
-      !["application/pdf", "text/plain", "text/markdown"].includes(file.type) &&
-      !/\.(pdf|txt|md)$/i.test(file.name)
-    ) {
-      alert("Unsupported file type.");
+    if (!/(\.pdf|\.txt|\.md)$/i.test(file.name)) {
+      alert("Unsupported file type.");          // early exit, don’t clear value to allow re-pick
       return;
     }
 
     try {
-      const storageRef = ref(storage, `knowledge/${file.name}`);
-      await uploadBytes(storageRef, file);
-      setMsgs((p) => [
-        ...p,
-        {
-          id: crypto.randomUUID(),
-          author: "ai",
-          text: "File uploaded successfully and will be processed shortly.",
-        },
-      ]);
+      await uploadBytes(ref(storage, `knowledge/${file.name}`), file);
+      push({ id: crypto.randomUUID(), author: "ai", text: "File uploaded successfully and will be processed shortly." });
     } catch {
-      setMsgs((p) => [
-        ...p,
-        { id: crypto.randomUUID(), author: "ai", text: "Upload failed." },
-      ]);
+      push({ id: crypto.randomUUID(), author: "ai", text: "Upload failed." });
     } finally {
-      if (e.target) e.target.value = "";
+      e.target.value = "";
     }
   };
 
-  const handleSend = async (text: string) => {
+  const handleSend = useCallback(async (text: string) => {
     if (!text.trim()) return;
-    setMsgs((p) => [...p, { id: crypto.randomUUID(), author: "user", text }]);
+    push({ id: crypto.randomUUID(), author: "user", text });
     setSending(true);
     try {
       const call = httpsCallable(functions, "chat");
-
-      // build history as { role, content }[]
-      const history = [
-        ...messages,                       // past turns kept in state
-        { id: crypto.randomUUID(), author: "user", text }, // current turn
-      ]
-        // keep only textual messages
+      const history = [...messages, { id: "", author: "user", text }]
         .filter((m) => m.text)
         .map((m) => ({
           role: m.author === "user" ? "user" : "model",
           content: [{ text: m.text! }],
         }));
-
       const { data } = await call({ messages: history });
-      setMsgs((p) => [
-        ...p,
-        { id: crypto.randomUUID(), author: "ai", text: data as string },
-      ]);
+      push({ id: crypto.randomUUID(), author: "ai", text: data as string });
     } catch {
-      setMsgs((p) => [
-        ...p,
-        { id: crypto.randomUUID(), author: "ai", text: "Something went wrong." },
-      ]);
+      push({ id: crypto.randomUUID(), author: "ai", text: "Something went wrong." });
     } finally {
       setSending(false);
     }
-  };
+  }, [messages, push]);
 
   // hide widget & toggle button on /login
   if (pathname === "/login") return null;
