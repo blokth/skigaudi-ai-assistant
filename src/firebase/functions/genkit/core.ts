@@ -4,11 +4,16 @@ import { genkit } from "genkit";
 
 export const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
+const storageBucket =
+	process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ??
+	`${projectId}.appspot.com`;
+
 export const REGION = "us-central1";
 
 if (!admin.apps.length) {
 	admin.initializeApp({
 		projectId,
+		storageBucket,          // <-- sets default bucket
 	});
 }
 
