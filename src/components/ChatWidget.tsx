@@ -99,10 +99,10 @@ export default function ChatWidget() {
         .filter((m) => m.text)
         .map((m) => ({
           role: m.author === "user" ? "user" : "model",
-          content: m.text!,
+          content: [{ text: m.text! }],
         }));
 
-      const { data } = await call(history);
+      const { data } = await call({ messages: history });
       setMsgs((p) => [
         ...p,
         { id: crypto.randomUUID(), author: "ai", text: data as string },
