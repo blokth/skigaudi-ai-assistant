@@ -18,210 +18,210 @@ type ChatMsg = {
 };
 
 export default function ChatWidget() {
-	const [open, setOpen] = useState(false);
-	const [messages, setMsgs] = useState<ChatMsg[]>([]);
-	const [sending, setSending] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [messages, setMsgs] = useState<ChatMsg[]>([]);
+  const [sending, setSending] = useState(false);
 
-	const [input, setInput] = useState("");
-	const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	const pathname = usePathname();
+  const pathname = usePathname();
 
-	useEffect(() => {
-		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [messages]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-	const { isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
 
-	const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const handleAttachClick = () => {
-		fileInputRef.current?.click();
-	};
+  const handleAttachClick = () => {
+    fileInputRef.current?.click();
+  };
 
-	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file) return;
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-		// show the attachment in the chat UI
-		setMsgs((p) => [
-		  ...p,
-		  {
-			id: crypto.randomUUID(),
-			author: "user",
-			attachmentName: file.name,
-		  },
-		]);
+    // show the attachment in the chat UI
+    setMsgs((p) => [
+      ...p,
+      {
+        id: crypto.randomUUID(),
+        author: "user",
+        attachmentName: file.name,
+      },
+    ]);
 
-		// accept only PDF, TXT or MD
-		if (
-			!["application/pdf", "text/plain", "text/markdown"].includes(file.type) &&
-			!/\.(pdf|txt|md)$/i.test(file.name)
-		) {
-			alert("Unsupported file type.");
-			return;
-		}
+    // accept only PDF, TXT or MD
+    if (
+      !["application/pdf", "text/plain", "text/markdown"].includes(file.type) &&
+      !/\.(pdf|txt|md)$/i.test(file.name)
+    ) {
+      alert("Unsupported file type.");
+      return;
+    }
 
-		try {
-			const storageRef = ref(storage, `knowledge/${file.name}`);
-			await uploadBytes(storageRef, file);
-			setMsgs((p) => [
-				...p,
-				{
-					id: crypto.randomUUID(),
-					author: "ai",
-					text: "File uploaded successfully and will be processed shortly.",
-				},
-			]);
-		} catch {
-			setMsgs((p) => [
-				...p,
-				{ id: crypto.randomUUID(), author: "ai", text: "Upload failed." },
-			]);
-		} finally {
-			if (e.target) e.target.value = "";
-		}
-	};
+    try {
+      const storageRef = ref(storage, `knowledge/${file.name}`);
+      await uploadBytes(storageRef, file);
+      setMsgs((p) => [
+        ...p,
+        {
+          id: crypto.randomUUID(),
+          author: "ai",
+          text: "File uploaded successfully and will be processed shortly.",
+        },
+      ]);
+    } catch {
+      setMsgs((p) => [
+        ...p,
+        { id: crypto.randomUUID(), author: "ai", text: "Upload failed." },
+      ]);
+    } finally {
+      if (e.target) e.target.value = "";
+    }
+  };
 
-	const handleSend = async (text: string) => {
-		if (!text.trim()) return;
-		setMsgs((p) => [...p, { id: crypto.randomUUID(), author: "user", text }]);
-		setSending(true);
-		try {
-			const call = httpsCallable(functions, "faqChat");
+  const handleSend = async (text: string) => {
+    if (!text.trim()) return;
+    setMsgs((p) => [...p, { id: crypto.randomUUID(), author: "user", text }]);
+    setSending(true);
+    try {
+      const call = httpsCallable(functions, "chat");
 
-			// build history as { role, content }[]
-			const history = [
-				...messages,                       // past turns kept in state
-				{ id: crypto.randomUUID(), author: "user", text }, // current turn
-			]
-				// keep only textual messages
-				.filter((m) => m.text)
-				.map((m) => ({
-					role: m.author === "user" ? "user" : "model",
-					content: m.text!,
-				}));
+      // build history as { role, content }[]
+      const history = [
+        ...messages,                       // past turns kept in state
+        { id: crypto.randomUUID(), author: "user", text }, // current turn
+      ]
+        // keep only textual messages
+        .filter((m) => m.text)
+        .map((m) => ({
+          role: m.author === "user" ? "user" : "model",
+          content: m.text!,
+        }));
 
-			const { data } = await call(history);
-			setMsgs((p) => [
-				...p,
-				{ id: crypto.randomUUID(), author: "ai", text: data as string },
-			]);
-		} catch {
-			setMsgs((p) => [
-				...p,
-				{ id: crypto.randomUUID(), author: "ai", text: "Something went wrong." },
-			]);
-		} finally {
-			setSending(false);
-		}
-	};
+      const { data } = await call(history);
+      setMsgs((p) => [
+        ...p,
+        { id: crypto.randomUUID(), author: "ai", text: data as string },
+      ]);
+    } catch {
+      setMsgs((p) => [
+        ...p,
+        { id: crypto.randomUUID(), author: "ai", text: "Something went wrong." },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  };
 
-	// hide widget & toggle button on /login
-	if (pathname === "/login") return null;
+  // hide widget & toggle button on /login
+  if (pathname === "/login") return null;
 
-	return (
-		<>
-			{/* floating toggle button */}
-			<Button
-				variant="default"
-				size="icon"
-				onClick={() => setOpen((p) => !p)}
-				className="fixed right-6 z-50 w-12 h-12 rounded-full shadow-md flex items-center justify-center active:scale-95 transition-transform"
-				style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}
-			>
-				<MessageCircle className="w-6 h-6" />
-			</Button>
+  return (
+    <>
+      {/* floating toggle button */}
+      <Button
+        variant="default"
+        size="icon"
+        onClick={() => setOpen((p) => !p)}
+        className="fixed right-6 z-50 w-12 h-12 rounded-full shadow-md flex items-center justify-center active:scale-95 transition-transform"
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 1.5rem)" }}
+      >
+        <MessageCircle className="w-6 h-6" />
+      </Button>
 
-			{/* chat panel */}
-			{open && (
-			 <div
-			   className={cn(
-				 "fixed right-6 z-50 w-72 md:w-96 h-[32rem]",
-				 "rounded-2xl overflow-hidden shadow-xl",
-				 "bg-white/90 dark:bg-gray-900/80 backdrop-blur-md",
-				 "border border-border",
-			   )}
-			   style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" }}
-			 >
-			   <div className="flex flex-col h-full">
-				 {/* messages */}
-				 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-				   {messages.map((m) => (
-					 <div
-					   key={m.id}
-					   className={cn(
-						 "max-w-[85%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap break-words",
-						 m.author === "user"
-						   ? "ml-auto bg-primary text-primary-foreground"
-						   : "mr-auto bg-secondary text-secondary-foreground",
-					   )}
-					 >
-					   {m.attachmentName ? (
-						 <div className="inline-flex items-center gap-2">
-						   <Paperclip className="size-4 shrink-0" />
-						   <span className="break-all">{m.attachmentName}</span>
-						 </div>
-					   ) : (
-						 m.text
-					   )}
-					 </div>
-				   ))}
-				   <div ref={messagesEndRef} />
-				 </div>
+      {/* chat panel */}
+      {open && (
+        <div
+          className={cn(
+            "fixed right-6 z-50 w-72 md:w-96 h-[32rem]",
+            "rounded-2xl overflow-hidden shadow-xl",
+            "bg-white/90 dark:bg-gray-900/80 backdrop-blur-md",
+            "border border-border",
+          )}
+          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)" }}
+        >
+          <div className="flex flex-col h-full">
+            {/* messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.map((m) => (
+                <div
+                  key={m.id}
+                  className={cn(
+                    "max-w-[85%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap break-words",
+                    m.author === "user"
+                      ? "ml-auto bg-primary text-primary-foreground"
+                      : "mr-auto bg-secondary text-secondary-foreground",
+                  )}
+                >
+                  {m.attachmentName ? (
+                    <div className="inline-flex items-center gap-2">
+                      <Paperclip className="size-4 shrink-0" />
+                      <span className="break-all">{m.attachmentName}</span>
+                    </div>
+                  ) : (
+                    m.text
+                  )}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
 
-				 {/* input */}
-				 <form
-				   onSubmit={(e) => {
-					 e.preventDefault();
-					 if (!input.trim()) return;
-					 handleSend(input);
-					 setInput("");
-				   }}
-				   className="border-t border-border flex items-center gap-2 p-3"
-				 >
-				   {isAdmin && (
-					 <Button
-					   type="button"
-					   variant="ghost"
-					   size="icon"
-					   onClick={handleAttachClick}
-					   disabled={sending}
-					 >
-					   <Paperclip className="size-4" />
-					 </Button>
-				   )}
+            {/* input */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!input.trim()) return;
+                handleSend(input);
+                setInput("");
+              }}
+              className="border-t border-border flex items-center gap-2 p-3"
+            >
+              {isAdmin && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleAttachClick}
+                  disabled={sending}
+                >
+                  <Paperclip className="size-4" />
+                </Button>
+              )}
 
-				   <input
-					 type="text"
-					 placeholder="Ask a question…"
-					 value={input}
-					 onChange={(e) => setInput(e.target.value)}
-					 disabled={sending}
-					 className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
-				   />
+              <input
+                type="text"
+                placeholder="Ask a question…"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={sending}
+                className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
+              />
 
-				   <Button
-					 type="submit"
-					 size="icon"
-					 variant="ghost"
-					 disabled={sending || !input.trim()}
-				   >
-					 <Send className="size-4" />
-				   </Button>
-				 </form>
-			   </div>
+              <Button
+                type="submit"
+                size="icon"
+                variant="ghost"
+                disabled={sending || !input.trim()}
+              >
+                <Send className="size-4" />
+              </Button>
+            </form>
+          </div>
 
-			   {/* hidden file picker */}
-			   <input
-				 type="file"
-				 accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
-				 ref={fileInputRef}
-				 onChange={handleFileSelect}
-				 style={{ display: "none" }}
-			   />
-			 </div>
-		   )}
-		</>
-	);
+          {/* hidden file picker */}
+          <input
+            type="file"
+            accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+          />
+        </div>
+      )}
+    </>
+  );
 }
