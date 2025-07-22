@@ -20,7 +20,6 @@ let cache: { ts: number; tpl: Handlebars.TemplateDelegate } | null = null;
 export async function renderSystemPrompt(vars: {
   callerRole: string;
   toolRules: string;
-  contextDocs?: string;
 }): Promise<string> {
   // serve from cache if still fresh
   if (cache && Date.now() - cache.ts < CACHE_TTL) {
