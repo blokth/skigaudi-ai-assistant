@@ -1,50 +1,39 @@
+import { FieldValue, type DocumentSnapshot } from "firebase-admin/firestore";
+import { ai, EMBEDDER } from "./genkit/core";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
-import { FieldValue } from "firebase-admin/firestore";
-import { textEmbedding005 } from "@genkit-ai/vertexai";
-import { ai } from "./genkit/core";
-import * as admin from "firebase-admin";
 
+
+const indexConfig = {
+  collection: "faqs",
+  vectorField: "embedding",
+  embedder: EMBEDDER,
+};
 
 /**
  * Embed and index a single FAQ document snapshot.
  * Re-used by the Firestore trigger and the admin CRUD tools so we
  * don’t invoke the Firebase onDocumentWritten handler manually.
  */
-export async function indexFaqDocument(
-  snapshot: admin.firestore.DocumentSnapshot,
-) {
+export async function indexFaqDocument(snapshot: DocumentSnapshot) {
   const data = snapshot.data();
   if (!data) return;
 
   const embedding = (
     await ai.embed({
-      embedder: textEmbedding005,
+      embedder: indexConfig.embedder,
       content: `${data.question}\n${data.answer}`,
     })
   )[0].embedding;
 
   await snapshot.ref.update({
-    embedding: FieldValue.vector(embedding),
+    [indexConfig.vectorField]: FieldValue.vector(embedding),
   });
 }
 
 export const faqEmbeddingIndexer = onDocumentWritten(
   { document: "faqs/{docId}", region: "us-central1" },
   async (event) => {
-    const afterSnap = event.data?.after;
-    if (!afterSnap) return;
-    const data = afterSnap.data();
-    if (!data) return;
-
-    const embedding = (
-      await ai.embed({
-        embedder: textEmbedding005,
-        content: `${data.question}\n${data.answer}`,
-      })
-    )[0].embedding;
-
-    await afterSnap.ref.update({
-      embedding: FieldValue.vector(embedding),
-    });
+    const after = event.data?.after;
+    if (after) await indexFaqDocument(after);
   },
 );
