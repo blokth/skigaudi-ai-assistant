@@ -1,7 +1,5 @@
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
-import { genkit } from "genkit";
-import { vertexAI, textEmbedding004 } from "@genkit-ai/vertexai";
 
 import { applicationDefault, initializeApp } from "firebase-admin/app";
 import { FieldValue, getFirestore, type DocumentSnapshot } from "firebase-admin/firestore";
@@ -11,18 +9,18 @@ import { tmpdir } from "os";
 import { join } from "path";
 import pdfParse from "pdf-parse";
 import { chunk } from "llm-chunk";
+import { ai, EMBEDDER } from "./genkit/core";
 
-const ai = genkit({ plugins: [vertexAI({ location: "us-central1" })] });
 
 const app = initializeApp({ credential: applicationDefault() });
 const firestore = getFirestore(app);
-const storage  = getStorage(app);
+const storage = getStorage(app);
 
 const indexConfig = {
   collection: "knowledge",
   contentField: "content",
   vectorField: "embedding",
-  embedder: textEmbedding004,
+  embedder: EMBEDDER,
 };
 
 export async function indexKnowledgeDocument(snap: DocumentSnapshot) {
