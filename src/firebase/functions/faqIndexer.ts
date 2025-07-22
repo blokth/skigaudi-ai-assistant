@@ -4,9 +4,6 @@ import { textEmbedding005 } from "@genkit-ai/vertexai";
 import { ai } from "./genkit/core";
 import * as admin from "firebase-admin";
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
 
 /**
  * Embed and index a single FAQ document snapshot.
