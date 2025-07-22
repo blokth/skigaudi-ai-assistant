@@ -1,29 +1,31 @@
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
-import { FieldValue } from "firebase-admin/firestore";
-import { EMBEDDER } from "./genkit/core";
-import { ai } from "./genkit/core";
-import * as admin from "firebase-admin";
+import { genkit } from "genkit";
+import { vertexAI, textEmbedding004 } from "@genkit-ai/vertexai";
+
+import { applicationDefault, initializeApp } from "firebase-admin/app";
+import { FieldValue, getFirestore, type DocumentSnapshot } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import * as fs from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import pdfParse from "pdf-parse";
 import { chunk } from "llm-chunk";
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
+const ai = genkit({ plugins: [vertexAI({ location: "us-central1" })] });
+
+const app = initializeApp({ credential: applicationDefault() });
+const firestore = getFirestore(app);
+const storage  = getStorage(app);
 
 const indexConfig = {
   collection: "knowledge",
   contentField: "content",
   vectorField: "embedding",
-  embedder: EMBEDDER,
+  embedder: textEmbedding004,
 };
 
-export async function indexKnowledgeDocument(
-  snap: admin.firestore.DocumentSnapshot,
-) {
+export async function indexKnowledgeDocument(snap: DocumentSnapshot) {
   const data = snap.data();
   if (!data) return;
 
@@ -55,7 +57,7 @@ export const knowledgeDocIndexer = onObjectFinalized(
       return;
     }
 
-    const bucket = admin.storage().bucket(object.bucket);
+    const bucket = storage.bucket(object.bucket);
     const tempPath = join(tmpdir(), filePath.split("/").pop()!);
     await bucket.file(filePath).download({ destination: tempPath });
 
@@ -93,10 +95,9 @@ export const knowledgeDocIndexer = onObjectFinalized(
       })
     ).map((r) => r.embedding);
 
-    const batch = admin.firestore().batch();
+    const batch = firestore.batch();
     chunks.forEach((chunk, idx) => {
-      const docRef = admin
-        .firestore()
+      const docRef = firestore
         .collection(indexConfig.collection)
         .doc(filePath.replace(/\//g, "__") + `__${idx}`);
 
