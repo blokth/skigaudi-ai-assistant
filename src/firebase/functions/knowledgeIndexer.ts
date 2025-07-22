@@ -76,7 +76,7 @@ export const knowledgeDocIndexer = onObjectFinalized(
     if (!text.trim()) return;
 
     // Split the document into smaller overlapping chunks for higher-quality retrieval.
-    const chunks: string[] = chunk(text, {
+    const chunks = chunk(text, {
       minLength: 1000,
       maxLength: 2000,
       overlap: 100,
@@ -84,12 +84,16 @@ export const knowledgeDocIndexer = onObjectFinalized(
       delimiters: "",
     });
 
-    const embedResults = (
-      await ai.embed({
-        embedder: indexConfig.embedder,
-        content: chunks,
-      })
-    ).map((r) => r.embedding);
+    // Create an embedding for every chunk – one embed call per segment.
+    const embedResults = await Promise.all(
+      chunks.map(async (segment) => {
+        const [res] = await ai.embed({
+          embedder: indexConfig.embedder,
+          content: segment,
+        });
+        return res.embedding;
+      }),
+    );
 
     const batch = firestore.batch();
     chunks.forEach((chunk, idx) => {
