@@ -1,7 +1,15 @@
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";
-import { textEmbedding005 } from "@genkit-ai/vertexai";
+import { textEmbedding005 as EMBEDDER } from "@genkit-ai/vertexai";
+
+// new generic index configuration (place it under the EMBEDDER import)
+const indexConfig = {
+  collection: "knowledge",
+  contentField: "content",
+  vectorField: "embedding",
+  embedder: EMBEDDER,
+};
 import { ai } from "./genkit/core";
 import * as admin from "firebase-admin";
 import * as fs from "fs";
@@ -21,10 +29,15 @@ export async function indexKnowledgeDocument(
   if (!data) return;
 
   const embedding = (
-    await ai.embed({ embedder: textEmbedding005, content: data.content })
+    await ai.embed({
+      embedder: indexConfig.embedder,
+      content: data[indexConfig.contentField],
+    })
   )[0].embedding;
 
-  await snap.ref.update({ embedding: FieldValue.vector(embedding) });
+  await snap.ref.update({
+    [indexConfig.vectorField]: FieldValue.vector(embedding),
+  });
 }
 
 export const knowledgeDocIndexer = onObjectFinalized(
@@ -74,20 +87,26 @@ export const knowledgeDocIndexer = onObjectFinalized(
       delimiters: "",
     });
 
-    let embedResults: number[][] = [];
+    const embedResults = (
+      await ai.embed({
+        embedder: indexConfig.embedder,
+        content: chunks,
+      })
+    ).map((r) => r.embedding);
 
     const batch = admin.firestore().batch();
     chunks.forEach((chunk, idx) => {
       const docRef = admin
         .firestore()
-        .collection("knowledge")
+        .collection(indexConfig.collection)
         .doc(filePath.replace(/\//g, "__") + `__${idx}`);
+
       batch.set(
         docRef,
         {
           title: filePath.split("/").pop(),
-          content: chunk,
-          embedding: FieldValue.vector(embedResults[idx]),
+          [indexConfig.contentField]: chunk,
+          [indexConfig.vectorField]: FieldValue.vector(embedResults[idx]),
         },
         { merge: true },
       );
