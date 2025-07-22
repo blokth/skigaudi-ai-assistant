@@ -1,6 +1,6 @@
 import { defineFirestoreRetriever } from "@genkit-ai/firebase";
 import { getFirestore } from "firebase-admin/firestore";
-import { ai, EMBEDDING } from "./core";
+import { ai, EMBEDDER } from "./core";
 
 export const faqRetriever = defineFirestoreRetriever(ai, {
 	name: "faqRetriever",
@@ -8,7 +8,7 @@ export const faqRetriever = defineFirestoreRetriever(ai, {
 	collection: "faqs",
 	contentField: "answer",
 	vectorField: "embedding",
-	embedder: EMBEDDING,
+	embedder: EMBEDDER,
 });
 
 export const knowledgeRetriever = defineFirestoreRetriever(ai, {
@@ -17,5 +17,5 @@ export const knowledgeRetriever = defineFirestoreRetriever(ai, {
 	collection: "knowledge",
 	contentField: "content",
 	vectorField: "embedding",
-	embedder: EMBEDDING,
+	embedder: EMBEDDER,
 });

@@ -1,10 +1,8 @@
 import { onCallGenkit } from "firebase-functions/https";
+import { REGION } from "./genkit/core";
 import { chatFlow } from "./genkit/flows";
 
-export const faqChat = onCallGenkit({ region: "us-central1" }, chatFlow);
-
-// Keep FAQ docs vectorised
+export const chat = onCallGenkit({ region: REGION }, chatFlow);
 
 export { faqEmbeddingIndexer } from "./faqIndexer";
-export { setSystemPrompt } from "./genkit/flows";
-export { knowledgeDocIndexer } from "./knowledgeIndexer";
+export { knowledgeDocIndexer, knowledgeDocRemover } from "./knowledgeIndexer";
