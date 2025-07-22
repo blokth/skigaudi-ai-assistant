@@ -1,4 +1,4 @@
-import { onObjectFinalized } from "firebase-functions/v2/storage";
+import { onObjectFinalized, onObjectDeleted } from "firebase-functions/v2/storage";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 
 import { FieldValue, type DocumentSnapshot } from "firebase-admin/firestore";
@@ -121,5 +121,34 @@ export const knowledgeEmbeddingIndexer = onDocumentWritten(
     const after = event.data?.after;
 
     if (after) await indexKnowledgeDocument(after);
+  },
+);
+
+// ────────────────────────────────────────────────────────────
+// When a file under `knowledge/…` is deleted from Cloud Storage
+// remove all Firestore chunk-docs that originated from it.
+// ────────────────────────────────────────────────────────────
+export const knowledgeDocRemover = onObjectDeleted(
+  { region: "us-central1" },
+  async (event) => {
+    const object = event.data;
+    if (!object) return;
+
+    const filePath = object.name ?? "";
+    if (!filePath.startsWith("knowledge/")) return;      // we only care about that folder
+
+    const originalFileName = filePath.split("/").pop()!; // e.g. "CV.pdf"
+
+    // Every chunk-document stores the original filename in `title`
+    const snap = await firestore
+      .collection(indexConfig.collection)
+      .where("title", "==", originalFileName)
+      .get();
+
+    if (snap.empty) return;
+
+    const batch = firestore.batch();
+    snap.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
   },
 );
