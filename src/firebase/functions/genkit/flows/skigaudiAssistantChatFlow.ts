@@ -21,8 +21,6 @@ function isAdmin(context: any): boolean {
 export const skigaudiAssistantChatFlow = ai.defineFlow(
   {
     name: "skigaudiAssistantChatFlow",
-    description:
-      "Chat with the Skigaudi assistant using RAG and, for admins, the full tool set.",
     inputSchema: z.object({
       messages: z.array(
         z.object({
@@ -55,7 +53,7 @@ export const skigaudiAssistantChatFlow = ai.defineFlow(
     ]);
 
     // spin up chat with optional tools & docs attached
-    const chat = ai.chat({
+    const chat = (ai as any).chat({
       system:
         "You are the Skigaudi assistant. Answer clearly and concisely. Use Markdown where appropriate.",
       messages,
