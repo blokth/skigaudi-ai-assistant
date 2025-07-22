@@ -1,30 +1,21 @@
 import { defineFirestoreRetriever } from "@genkit-ai/firebase";
-import { devLocalRetrieverRef } from "@genkit-ai/dev-local-vectorstore";
 import { getFirestore } from "firebase-admin/firestore";
-import { ai, textEmbedding005, USE_LOCAL_VECTORSTORE } from "./core";
+import { ai, EMBEDDING } from "./core";
 
-/* FAQ */
-export const faqRetriever = USE_LOCAL_VECTORSTORE
-	? devLocalRetrieverRef("faqs")
-	: defineFirestoreRetriever(ai, {
-			name: "faqRetriever",
-			firestore: getFirestore(),
-			collection: "faqs",
-			contentField: "answer",
-			vectorField: "embedding",
-			embedder: textEmbedding005,
-			distanceMeasure: "DOT_PRODUCT",
-		});
+export const faqRetriever = defineFirestoreRetriever(ai, {
+	name: "faqRetriever",
+	firestore: getFirestore(),
+	collection: "faqs",
+	contentField: "answer",
+	vectorField: "embedding",
+	embedder: EMBEDDING,
+});
 
-/* Knowledge */
-export const knowledgeRetriever = USE_LOCAL_VECTORSTORE
-	? devLocalRetrieverRef("knowledge")
-	: defineFirestoreRetriever(ai, {
-			name: "knowledgeRetriever",
-			firestore: getFirestore(),
-			collection: "knowledge",
-			contentField: "content",
-			vectorField: "embedding",
-			embedder: textEmbedding005,
-			distanceMeasure: "DOT_PRODUCT",
-		});
+export const knowledgeRetriever = defineFirestoreRetriever(ai, {
+	name: "knowledgeRetriever",
+	firestore: getFirestore(),
+	collection: "knowledge",
+	contentField: "content",
+	vectorField: "embedding",
+	embedder: EMBEDDING,
+});

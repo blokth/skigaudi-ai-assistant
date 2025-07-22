@@ -1,146 +1,88 @@
-import { z } from "genkit";
 import { getFirestore } from "firebase-admin/firestore";
-import { ai, USE_LOCAL_VECTORSTORE } from "./core";
-import { indexFaqDocument, unindexFaq } from "../faqIndexer";
-import { unindexKnowledge } from "../knowledgeIndexer";
-import { storage } from "firebase-admin";
-
-/* ─ helper ────────────────────────────────────────────────────────── */
-function isAdmin(context: any): boolean {
-  if (context?.isAdmin !== undefined) return !!context.isAdmin;
-
-  // • primary rule: custom claim “admin” must be true
-  if (context?.auth?.token?.admin === true) return true;
-
-  // • fallback for legacy accounts (password provider = admin)
-  return context?.auth?.token?.firebase?.sign_in_provider === "password";
-}
-
-function assertAdmin(context: any) {
-  if (!isAdmin(context)) {
-    throw new Error("Permission denied – admin privileges required.");
-  }
-}
+import { z } from "genkit";
+import { indexFaqDocument } from "../faqIndexer";
+import { assertAdmin } from "./auth";
+import { ai } from "./core";
 
 const common = { outputSchema: z.string() };
 
-/* CRUD */
 export const createFaq = ai.defineTool(
-  {
-    name: "createFaq",
-    description: "Create a new FAQ entry.",
-    inputSchema: z.object({ question: z.string(), answer: z.string() }),
-    ...common,
-  },
-  async ({ question, answer }, { context }) => {
-    assertAdmin(context);
+	{
+		name: "createFaq",
+		description: "Create a new FAQ entry.",
+		inputSchema: z.object({ question: z.string(), answer: z.string() }),
+		...common,
+	},
+	async ({ question, answer }, { context }) => {
+		assertAdmin(context);
 
-    const ref = await getFirestore().collection("faqs").add({
-      question,
-      answer,
-    });
-    await indexFaqDocument(await ref.get());
-    return `FAQ created with id ${ref.id}`;
-  },
+		const ref = await getFirestore().collection("faqs").add({
+			question,
+			answer,
+		});
+		await indexFaqDocument(await ref.get());
+		return `FAQ created with id ${ref.id}`;
+	},
 );
 
 export const updateFaq = ai.defineTool(
-  {
-    name: "updateFaq",
-    description: "Update an existing FAQ entry.",
-    inputSchema: z.object({
-      id: z.string(),
-      question: z.string().optional(),
-      answer: z.string().optional(),
-    }),
-    ...common,
-  },
-  async ({ id, ...patch }, { context }) => {
-    assertAdmin(context);
+	{
+		name: "updateFaq",
+		description: "Update an existing FAQ entry.",
+		inputSchema: z.object({
+			id: z.string(),
+			question: z.string().optional(),
+			answer: z.string().optional(),
+		}),
+		...common,
+	},
+	async ({ id, ...patch }, { context }) => {
+		assertAdmin(context);
 
-    const docRef = getFirestore().collection("faqs").doc(id);
-    await docRef.update(patch);
-    await indexFaqDocument(await docRef.get());
-    return `FAQ ${id} updated.`;
-  },
+		const docRef = getFirestore().collection("faqs").doc(id);
+		await docRef.update(patch);
+		await indexFaqDocument(await docRef.get());
+		return `FAQ ${id} updated.`;
+	},
 );
 
 export const deleteFaq = ai.defineTool(
-  {
-    name: "deleteFaq",
-    description: "Delete an FAQ entry.",
-    inputSchema: z.object({ id: z.string() }),
-    ...common,
-  },
-  async ({ id }, { context }) => {
-    assertAdmin(context);
+	{
+		name: "deleteFaq",
+		description: "Delete an FAQ entry.",
+		inputSchema: z.object({ id: z.string() }),
+		...common,
+	},
+	async ({ id }, { context }) => {
+		assertAdmin(context);
 
-    await getFirestore().collection("faqs").doc(id).delete();
-    await unindexFaq(id);
-    return `FAQ ${id} deleted.`;
-  },
+		await getFirestore().collection("faqs").doc(id).delete();
+		return `FAQ ${id} deleted.`;
+	},
 );
 
 export const setSystemPrompt = ai.defineTool(
-  {
-    name: "setSystemPrompt",
-    description: "Change the assistant’s system-prompt.",
-    inputSchema: z.object({ content: z.string() }),
-    ...common,
-  },
-  async ({ content }, { context }) => {
-    assertAdmin(context);
+	{
+		name: "setSystemPrompt",
+		description: "Change the assistant’s system-prompt.",
+		inputSchema: z.object({ content: z.string() }),
+		...common,
+	},
+	async ({ content }, { context }) => {
+		assertAdmin(context);
 
-    if (!content.trim().startsWith("---")) {
-      throw new Error(
-        "System prompt must be supplied in .prompt (Dotprompt) format " +
-          "and start with the '---' YAML front-matter delimiter.",
-      );
-    }
+		if (!content.trim().startsWith("---")) {
+			throw new Error(
+				"System prompt must be supplied in .prompt (Dotprompt) format " +
+					"and start with the '---' YAML front-matter delimiter.",
+			);
+		}
 
-    await getFirestore()
-      .doc("systemPrompts/chatPrompt")
-      .set({ content }, { merge: true });
-    return "System prompt updated.";
-  },
+		await getFirestore()
+			.doc("systemPrompts/chatPrompt")
+			.set({ content }, { merge: true });
+		return "System prompt updated.";
+	},
 );
 
-export const deleteKnowledge = ai.defineTool(
-  {
-    name: "deleteKnowledge",
-    description: "Delete a knowledge document (all its chunks & vectors).",
-    inputSchema: z.object({ fileName: z.string() }),
-    ...common,
-  },
-  async ({ fileName }, { context }) => {
-    assertAdmin(context);
-
-    // remove GCS object
-    await storage().bucket().file(`knowledge/${fileName}`).delete({ ignoreNotFound: true });
-
-    // remove Firestore chunk docs (this also un-indexes Firestore-vector mode)
-    const qs = await getFirestore()
-      .collection("knowledge")
-      .where("title", "==", fileName)
-      .get();
-
-    const batch = getFirestore().batch();
-    qs.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
-
-    // dev-local vector store: explicit delete
-    if (USE_LOCAL_VECTORSTORE) {
-      await Promise.all(qs.docs.map((d) => unindexKnowledge(d.id)));
-    }
-
-    return `Knowledge document ${fileName} deleted.`;
-  },
-);
-
-export const adminTools = [
-  createFaq,
-  updateFaq,
-  deleteFaq,
-  setSystemPrompt,
-  deleteKnowledge,          // ← add
-];
+export const adminTools = [createFaq, updateFaq, deleteFaq, setSystemPrompt];

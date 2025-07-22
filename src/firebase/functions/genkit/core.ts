@@ -1,40 +1,18 @@
-import { genkit } from "genkit";
-import {
-  vertexAI,
-  textEmbedding005,
-  gemini20Flash,          // NEW – default chat model
-} from "@genkit-ai/vertexai";
-import { devLocalVectorstore } from "@genkit-ai/dev-local-vectorstore";
+import { gemini20Flash, textEmbedding005, vertexAI } from "@genkit-ai/vertexai";
 import * as admin from "firebase-admin";
+import { genkit } from "genkit";
 
-/* ─ setup ─────────────────────────────────────────────── */
-export const USE_LOCAL_VECTORSTORE =
-	process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true" ||
-	!!process.env.FIRESTORE_EMULATOR_HOST;
+export const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 if (!admin.apps.length) {
 	admin.initializeApp({
-		projectId:
-			process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
-			process.env.GOOGLE_CLOUD_PROJECT ||
-			"skigaudi-ai-assistant",
+		projectId,
 	});
 }
 
-/* ─ Genkit instance ───────────────────────────────────── */
 export const ai = genkit({
-	plugins: [
-		vertexAI({ location: "us-central1" }),
-		...(USE_LOCAL_VECTORSTORE
-			? [
-					devLocalVectorstore([
-						{ indexName: "faqs", embedder: textEmbedding005 },
-						{ indexName: "knowledge", embedder: textEmbedding005 },
-					]),
-				]
-			: []),
-	],
-	model: gemini20Flash,   // NEW – default model for all generations
+	plugins: [vertexAI()],
+	model: gemini20Flash,
 });
 
-export { textEmbedding005 };
+export { textEmbedding005 as EMBEDDING };
