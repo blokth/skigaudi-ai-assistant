@@ -12,7 +12,7 @@ import { ai, EMBEDDER } from "./genkit/core";
 
 
 const firestore = admin.firestore();
-const storage  = admin.storage();
+const storage = admin.storage();
 
 const indexConfig = {
   collection: "knowledge",
