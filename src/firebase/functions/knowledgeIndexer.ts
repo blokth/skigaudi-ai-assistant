@@ -1,15 +1,7 @@
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";
-import { textEmbedding005 as EMBEDDER } from "@genkit-ai/vertexai";
-
-// new generic index configuration (place it under the EMBEDDER import)
-const indexConfig = {
-  collection: "knowledge",
-  contentField: "content",
-  vectorField: "embedding",
-  embedder: EMBEDDER,
-};
+import { EMBEDDER } from "./genkit/core";
 import { ai } from "./genkit/core";
 import * as admin from "firebase-admin";
 import * as fs from "fs";
@@ -21,6 +13,13 @@ import { chunk } from "llm-chunk";
 if (!admin.apps.length) {
   admin.initializeApp();
 }
+
+const indexConfig = {
+  collection: "knowledge",
+  contentField: "content",
+  vectorField: "embedding",
+  embedder: EMBEDDER,
+};
 
 export async function indexKnowledgeDocument(
   snap: admin.firestore.DocumentSnapshot,
