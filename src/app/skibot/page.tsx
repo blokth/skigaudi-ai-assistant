@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { ref, uploadBytes, listAll, deleteObject } from "firebase/storage";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
@@ -18,21 +18,18 @@ export default function SkiBotConfig() {
   const [files, setFiles] = useState<string[]>([]);
   const [filesLoading, setFilesLoading] = useState(true);
 
-  const loadPrompt = useCallback(async () => {
-    const snap = await getDoc(doc(db, "systemPrompts", "chatPrompt"));
-    setPrompt(snap.exists() ? snap.data()?.content ?? "" : "");
+  // initial data fetch – prompt & file list in one go
+  useEffect(() => {
+    (async () => {
+      const [promptSnap, list] = await Promise.all([
+        getDoc(doc(db, "systemPrompts", "chatPrompt")),
+        listAll(ref(storage, "knowledge")),
+      ]);
+      setPrompt(promptSnap.exists() ? promptSnap.data()?.content ?? "" : "");
+      setFiles(list.items.map((i) => i.name));
+      setFilesLoading(false);
+    })();
   }, []);
-
-  useEffect(() => { loadPrompt(); }, [loadPrompt]);
-
-  const loadFiles = useCallback(async () => {
-    setFilesLoading(true);
-    const folderRef = ref(storage, "knowledge");
-    const { items } = await listAll(folderRef);
-    setFiles(items.map((i) => i.name));
-    setFilesLoading(false);
-  }, []);
-  useEffect(() => { loadFiles(); }, [loadFiles]);
 
   const savePrompt = async () => {
     if (!isAdmin) return;
@@ -66,8 +63,7 @@ export default function SkiBotConfig() {
     try {
       await uploadBytes(ref(storage, `knowledge/${file.name}`), file);
       alert("File uploaded successfully and will be processed shortly.");
-      // refresh file list
-      setFiles((prev) => [...prev, file.name]);
+      setFiles((prev) => [...prev, file.name]);   // refresh list
     } catch {
       setErr("Upload failed.");
     } finally {
@@ -80,10 +76,9 @@ export default function SkiBotConfig() {
     if (!confirm(`Delete "${name}"?`)) return;
     try {
       await deleteObject(ref(storage, `knowledge/${name}`));
-      // Firestore chunk docs will be removed by the storage-trigger
       setFiles((prev) => prev.filter((f) => f !== name));
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
       alert("Failed to delete file – missing permissions?");
     }
   };
