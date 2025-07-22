@@ -26,19 +26,14 @@ export const chatFlow = ai.defineFlow(
         .find(({ role }) => role === "user")
         ?.content.at(0)?.text ?? "";
 
-    const [faqs, knowledge] = await Promise.all([
-      ai.retrieve({
-        retriever: faqRetriever,
-        query,
-      }),
-      ai.retrieve({
-        retriever: knowledgeRetriever,
-        query,
-      }),
+    // run retrievals and MCP queries concurrently
+    const [[faqs, knowledge], [resources, tools]] = await Promise.all([
+      Promise.all([
+        ai.retrieve({ retriever: faqRetriever, query }),
+        ai.retrieve({ retriever: knowledgeRetriever, query }),
+      ]),
+      Promise.all([getExternalResources(), getExternalTools()]),
     ]);
-
-    const resources = await getExternalResources();
-    const tools = await getExternalTools();
 
     const admin = isAdmin(context);
 
