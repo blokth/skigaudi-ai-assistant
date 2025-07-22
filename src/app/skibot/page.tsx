@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ref, uploadBytes, listAll, deleteObject } from "firebase/storage";
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
@@ -78,13 +78,14 @@ export default function SkiBotConfig() {
 
   const deleteFile = async (name: string) => {
     if (!confirm(`Delete "${name}"?`)) return;
-    // GCS
-    await deleteObject(ref(storage, `knowledge/${name}`)).catch(() => {});
-    // Firestore docs with same title
-    const qs = query(collection(db, "knowledge"), where("title", "==", name));
-    (await getDocs(qs)).forEach(async (d) => await deleteDoc(d.ref));
-    // refresh UI
-    setFiles((prev) => prev.filter((f) => f !== name));
+    try {
+      await deleteObject(ref(storage, `knowledge/${name}`));
+      // Firestore chunk docs will be removed by the storage-trigger
+      setFiles((prev) => prev.filter((f) => f !== name));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete file – missing permissions?");
+    }
   };
 
   if (loading)
