@@ -189,7 +189,7 @@ export const bulkCreateFaq = ai.defineTool(
     name: "bulkCreateFaq",
     description: "Extract Question-Answer pairs from a text block and create FAQs.",
     inputSchema: z.object({ text: z.string() }),
-    outputSchema: z.string(),
+    outputSchema: z.object({ count: z.number() }),
   },
   async ({ text }, { context }) => {
     assertAdmin(context);
@@ -202,7 +202,7 @@ export const bulkCreateFaq = ai.defineTool(
       await indexFaqDocument(await ref.get());
     }
 
-    return `Imported ${faqs.length} FAQs.`;
+    return { count: faqs.length };
   },
 );
 
