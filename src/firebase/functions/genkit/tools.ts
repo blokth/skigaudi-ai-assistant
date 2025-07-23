@@ -103,10 +103,44 @@ export const deleteKnowledgeDoc = ai.defineTool(
   },
 );
 
+// Find FAQ tool
+export const findFaq = ai.defineTool(
+  {
+    name: "findFaq",
+    description:
+      "Search FAQ entries by their question *or* answer text and return every match " +
+      "with its Firestore id.  Use this to discover the id before calling updateFaq / deleteFaq.",
+    inputSchema: z.object({ query: z.string() }),
+    outputSchema: z.array(
+      z.object({
+        id: z.string(),
+        question: z.string(),
+        answer: z.string(),
+      }),
+    ),
+  },
+  async ({ query }, { context }) => {
+    // 🔒 only admins may enumerate the FAQ collection
+    assertAdmin(context);
+
+    const q = query.toLowerCase();
+    const snap = await getFirestore().collection("faqs").get();
+
+    return snap.docs
+      .map((d) => ({ id: d.id, ...(d.data() as any) }))
+      .filter(
+        (f) =>
+          f.question.toLowerCase().includes(q) ||
+          f.answer.toLowerCase().includes(q),
+      );
+  },
+);
+
 export const adminTools = [
   createFaq,
   updateFaq,
   deleteFaq,
+  findFaq,
   setSystemPrompt,
   deleteKnowledgeDoc,
 ];
