@@ -62,34 +62,6 @@ export const deleteFaq = ai.defineTool(
   },
 );
 
-export const deleteFaqByContent = ai.defineTool(
-  {
-    name: "deleteFaqByContent",
-    description:
-      "Delete the first FAQ whose question OR answer contains the given text.",
-    inputSchema: z.object({ query: z.string() }),
-    ...common,
-  },
-  async ({ query }, { context }) => {
-    assertAdmin(context);
-
-    const q = query.toLowerCase();
-    const snap = await getFirestore().collection("faqs").get();
-
-    const match = snap.docs.find((d) => {
-      const { question, answer } = d.data() as any;
-      return (
-        question.toLowerCase().includes(q) || answer.toLowerCase().includes(q)
-      );
-    });
-
-    if (!match) return "No FAQ matched the query.";
-
-    await match.ref.delete();
-    return `FAQ ${match.id} deleted.`;
-  },
-);
-
 export const setSystemPrompt = ai.defineTool(
   {
     name: "setSystemPrompt",
@@ -214,7 +186,6 @@ export const adminTools = [
   createFaq,
   updateFaq,
   deleteFaq,
-  deleteFaqByContent,
   findFaq,
   listFaqs,
   findKnowledgeDoc,

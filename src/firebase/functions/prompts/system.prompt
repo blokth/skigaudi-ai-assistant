@@ -1,6 +1,5 @@
 ---
 model: vertexai/gemini-2.0-flash
-tools: [findFaq, listFaqs, updateFaq, deleteFaq]   # ← added
 input:
   schema:
     callerRole: string        # "ADMIN" | "NORMAL USER"
