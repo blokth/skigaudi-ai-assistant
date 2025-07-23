@@ -51,11 +51,14 @@ export default function ChatWidget() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const placeholderShownRef = useRef(false);
 
   useEffect(() => {
     // clear any running interval when component unmounts
     return () => {
       if (loadingIntervalRef.current) clearInterval(loadingIntervalRef.current);
+      if (loadingTimeoutRef.current)  clearTimeout(loadingTimeoutRef.current);
     };
   }, []);
 
@@ -91,32 +94,39 @@ export default function ChatWidget() {
       // user message
       push({ id: crypto.randomUUID(), author: "user", text });
 
-      // ski-themed loading placeholder
       const loadingId = crypto.randomUUID();
-      push({
-        id: loadingId,
-        author: "ai",
-        loading: true,
-        text: LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)],
-      });
 
-      // cycle the loading message every 3 s
-      loadingIntervalRef.current = setInterval(() => {
-        setMsgs(prev =>
-          prev.map(m => {
-            if (m.id !== loadingId) return m;
-            const current = m.text;
-            let next = current;
-            while (next === current) {
-              next =
-                LOADING_MESSAGES[
-                  Math.floor(Math.random() * LOADING_MESSAGES.length)
-                ];
-            }
-            return { ...m, text: next };
-          }),
-        );
-      }, 3000);
+      // show placeholder after a short pause to mimic "thinking"
+      loadingTimeoutRef.current = setTimeout(() => {
+        placeholderShownRef.current = true;
+
+        push({
+          id: loadingId,
+          author: "ai",
+          loading: true,
+          text:
+            LOADING_MESSAGES[
+              Math.floor(Math.random() * LOADING_MESSAGES.length)
+            ],
+        });
+
+        // rotate the loading text every 3 s
+        loadingIntervalRef.current = setInterval(() => {
+          setMsgs((prev) =>
+            prev.map((m) => {
+              if (m.id !== loadingId) return m;
+              let next = m.text;
+              while (next === m.text) {
+                next =
+                  LOADING_MESSAGES[
+                    Math.floor(Math.random() * LOADING_MESSAGES.length)
+                  ];
+              }
+              return { ...m, text: next };
+            }),
+          );
+        }, 3000);
+      }, 300); // 300 ms delay
 
       setSending(true);
       try {
@@ -130,30 +140,63 @@ export default function ChatWidget() {
 
         const { data } = await call({ messages: history });
 
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+          loadingTimeoutRef.current = null;
+        }
+
         // clear the loading interval before replacing the placeholder
         if (loadingIntervalRef.current) {
           clearInterval(loadingIntervalRef.current);
           loadingIntervalRef.current = null;
         }
 
-        // replace placeholder with real answer
-        setMsgs((prev) =>
-          prev.map((m) =>
-            m.id === loadingId ? { ...m, text: data as string, loading: false } : m,
-          ),
-        );
+        setMsgs((prev) => {
+          if (!placeholderShownRef.current) {
+            // placeholder never rendered -> just append real answer
+            return [
+              ...prev,
+              { id: loadingId, author: "ai", text: data as string },
+            ];
+          }
+          // placeholder exists -> replace it
+          return prev.map((m) =>
+            m.id === loadingId
+              ? { ...m, text: data as string, loading: false }
+              : m,
+          );
+        });
+
+        placeholderShownRef.current = false; // reset flag
       } catch {
         // clear the loading interval before replacing the placeholder
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+          loadingTimeoutRef.current = null;
+        }
+
         if (loadingIntervalRef.current) {
           clearInterval(loadingIntervalRef.current);
           loadingIntervalRef.current = null;
         }
 
-        setMsgs((prev) =>
-          prev.map((m) =>
-            m.id === loadingId ? { ...m, text: "Something went wrong.", loading: false } : m,
-          ),
-        );
+        setMsgs((prev) => {
+          if (!placeholderShownRef.current) {
+            // placeholder never rendered -> just append error answer
+            return [
+              ...prev,
+              { id: loadingId, author: "ai", text: "Something went wrong." },
+            ];
+          }
+          // placeholder exists -> replace it
+          return prev.map((m) =>
+            m.id === loadingId
+              ? { ...m, text: "Something went wrong.", loading: false }
+              : m,
+          );
+        });
+
+        placeholderShownRef.current = false; // reset flag
       } finally {
         setSending(false);
       }
