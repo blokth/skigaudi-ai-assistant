@@ -3,11 +3,11 @@ import { getFirestore } from "firebase-admin/firestore";
 import { ai } from "../core";
 import { assertAdmin } from "../auth";
 import { indexFaqDocument } from "../../faqIndexer";
+import { bulkExtractPrompt } from "../prompt";
 
 export const bulkCreateFaq = ai.defineFlow(
   {
     name: "bulkCreateFaq",
-    description: "Extract many FAQ pairs from a text blob and store them.",
     inputSchema: z.object({ text: z.string() }),
     outputSchema: z.string(),
   },
@@ -16,6 +16,9 @@ export const bulkCreateFaq = ai.defineFlow(
     assertAdmin(context);
 
     // 1. let the model turn the blob into JSON
+    const { output: faqs } = await bulkExtractPrompt(
+      { text }
+    )
     const { output: faqs } = await ai.generate({
       model: "vertexai/gemini-2.0-flash",
       prompt:
