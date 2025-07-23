@@ -1,10 +1,10 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { z } from "genkit";
+import { bulkCreatePrompt } from "./prompt";
 import { indexFaqDocument } from "../faqIndexer";
 import { assertAdmin } from "./auth";
 import { ai } from "./core";
-import { bulkCreateFaq } from "./flows/bulkCreateFaq";
 
 const common = { outputSchema: z.string() };
 
@@ -183,13 +183,36 @@ export const findKnowledgeDoc = ai.defineTool(
   },
 );
 
+
+export const bulkCreateFaq = ai.defineTool(
+  {
+    name: "bulkCreateFaq",
+    description: "Extract Question-Answer pairs from a text block and create FAQs.",
+    inputSchema: z.object({ text: z.string() }),
+    outputSchema: z.string(),
+  },
+  async ({ text }, { context }) => {
+    assertAdmin(context);
+
+    const { output: faqs } = await bulkCreatePrompt({ text });
+
+    const col = getFirestore().collection("faqs");
+    for (const { question, answer } of faqs) {
+      const ref = await col.add({ question, answer });
+      await indexFaqDocument(await ref.get());
+    }
+
+    return `Imported ${faqs.length} FAQs.`;
+  },
+);
+
 export const adminTools = [
   createFaq,
   updateFaq,
   deleteFaq,
   findFaq,
   listFaqs,
-  bulkCreateFaq,      // ← added
+  bulkCreateFaq,
   findKnowledgeDoc,
   setSystemPrompt,
   deleteKnowledgeDoc,
