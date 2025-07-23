@@ -3,6 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { ai } from "../core";
 import { assertAdmin } from "../auth";
 import { indexFaqDocument } from "../../faqIndexer";
+import { bulkCreatePrompt } from "../prompt";
 
 export const bulkCreateFaq = ai.defineFlow(
   {
@@ -11,12 +12,10 @@ export const bulkCreateFaq = ai.defineFlow(
     outputSchema: z.string(),
   },
   async ({ text }, { context }) => {
-    // admin-only
     assertAdmin(context);
 
-    const { output: faqs } = await ai.prompt('bulkCreate')({ text });
+    const { output: faqs } = await bulkCreatePrompt({ text });
 
-    // 2. write each FAQ and index it
     const col = getFirestore().collection("faqs");
     for (const { question, answer } of faqs) {
       const ref = await col.add({ question, answer });
