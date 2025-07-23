@@ -1,14 +1,15 @@
 ---
 model: vertexai/gemini-2.0-flash          # fast, cheap model is fine for extraction
-format: json                              # we want pure JSON back
-schema:                                   # expected output = array of QA objects
-  type: array
-  items:
-    type: object
-    properties:
-      question: { type: string }
-      answer:   { type: string }
-    required: [question, answer]
+output:
+  format: json
+  schema:
+    type: array
+    items:
+      type: object
+      properties:
+        question: { type: string }
+        answer:   { type: string }
+      required: [question, answer]
 input:                                    # the flow passes only one variable
   schema:
     text: string
