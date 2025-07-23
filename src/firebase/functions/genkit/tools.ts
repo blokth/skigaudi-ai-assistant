@@ -2,6 +2,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { z } from "genkit";
 import { indexFaqDocument } from "../faqIndexer";
+import { indexKnowledgeDocument } from "../knowledgeIndexer";
 import { assertAdmin } from "./auth";
 import { ai } from "./core";
 
@@ -136,11 +137,41 @@ export const findFaq = ai.defineTool(
   },
 );
 
+// Find knowledge-doc tool
+export const findKnowledgeDoc = ai.defineTool(
+  {
+    name: "findKnowledgeDoc",
+    description:
+      "Search indexed knowledge documents by their textual content and return the " +
+      "original filename together with the matched chunk of text.",
+    inputSchema: z.object({ query: z.string() }),
+    outputSchema: z.array(
+      z.object({
+        name: z.string(),    // filename (e.g. CV.pdf)
+        content: z.string(), // chunk that matched
+      }),
+    ),
+  },
+  async ({ query }, { context }) => {
+    // 🔒 enumeration is admin-only
+    assertAdmin(context);
+
+    const q = query.toLowerCase();
+    const snap = await getFirestore().collection("knowledge").get();
+
+    return snap.docs
+      .map((d) => d.data() as any)                // { name, content, … }
+      .filter((d) => d.content.toLowerCase().includes(q))
+      .map((d) => ({ name: d.name, content: d.content }));
+  },
+);
+
 export const adminTools = [
   createFaq,
   updateFaq,
   deleteFaq,
   findFaq,
+  findKnowledgeDoc,
   setSystemPrompt,
   deleteKnowledgeDoc,
 ];
