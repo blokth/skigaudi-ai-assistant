@@ -10,6 +10,14 @@ import { useAuth } from "@/context/AuthContext";
 import { functions, storage } from "@/firebase/client";
 import { cn } from "@/lib/utils";
 
+const LOADING_MESSAGES = [
+  "Waxing the skis…",
+  "Riding the chairlift…",
+  "Carving down the slope…",
+  "Gathering all the documents…",
+  "Checking avalanche report…",
+];
+
 type ChatMsg = {
   id: string;
   author: "user" | "ai";
@@ -67,26 +75,51 @@ export default function ChatWidget() {
     }
   };
 
-  const handleSend = useCallback(async (text: string) => {
-    if (!text.trim()) return;
-    push({ id: crypto.randomUUID(), author: "user", text });
-    setSending(true);
-    try {
-      const call = httpsCallable(functions, "chat");
-      const history = [...messages, { id: "", author: "user", text }]
-        .filter((m) => m.text)
-        .map((m) => ({
-          role: m.author === "user" ? "user" : "model",
-          content: [{ text: m.text! }],
-        }));
-      const { data } = await call({ messages: history });
-      push({ id: crypto.randomUUID(), author: "ai", text: data as string });
-    } catch {
-      push({ id: crypto.randomUUID(), author: "ai", text: "Something went wrong." });
-    } finally {
-      setSending(false);
-    }
-  }, [messages, push]);
+  const handleSend = useCallback(
+    async (text: string) => {
+      if (!text.trim()) return;
+
+      // user message
+      push({ id: crypto.randomUUID(), author: "user", text });
+
+      // ski-themed loading placeholder
+      const loadingId = crypto.randomUUID();
+      push({
+        id: loadingId,
+        author: "ai",
+        text: LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)],
+      });
+
+      setSending(true);
+      try {
+        const call = httpsCallable(functions, "chat");
+        const history = [...messages, { id: "", author: "user", text }]
+          .filter((m) => m.text)
+          .map((m) => ({
+            role: m.author === "user" ? "user" : "model",
+            content: [{ text: m.text! }],
+          }));
+
+        const { data } = await call({ messages: history });
+
+        // replace placeholder with real answer
+        setMsgs((prev) =>
+          prev.map((m) =>
+            m.id === loadingId ? { ...m, text: data as string } : m,
+          ),
+        );
+      } catch {
+        setMsgs((prev) =>
+          prev.map((m) =>
+            m.id === loadingId ? { ...m, text: "Something went wrong." } : m,
+          ),
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [messages, push],
+  );
 
   // hide widget & toggle button on /login
   if (pathname === "/login") return null;
