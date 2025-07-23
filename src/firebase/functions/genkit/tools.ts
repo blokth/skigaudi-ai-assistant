@@ -4,6 +4,7 @@ import { z } from "genkit";
 import { indexFaqDocument } from "../faqIndexer";
 import { assertAdmin } from "./auth";
 import { ai } from "./core";
+import { bulkCreateFaq } from "./flows/bulkCreateFaq";
 
 const common = { outputSchema: z.string() };
 
@@ -188,6 +189,7 @@ export const adminTools = [
   deleteFaq,
   findFaq,
   listFaqs,
+  bulkCreateFaq,      // ← added
   findKnowledgeDoc,
   setSystemPrompt,
   deleteKnowledgeDoc,
