@@ -134,6 +134,27 @@ export const findFaq = ai.defineTool(
   },
 );
 
+export const listFaqs = ai.defineTool(
+  {
+    name: "listFaqs",
+    description: "Return every FAQ document (id, question, answer).",
+    inputSchema: z.object({}),   // no input needed
+    outputSchema: z.array(
+      z.object({
+        id: z.string(),
+        question: z.string(),
+        answer: z.string(),
+      }),
+    ),
+  },
+  async (_, { context }) => {
+    assertAdmin(context);
+
+    const snap = await getFirestore().collection("faqs").get();
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+  },
+);
+
 export const findKnowledgeDoc = ai.defineTool(
   {
     name: "findKnowledgeDoc",
@@ -166,6 +187,7 @@ export const adminTools = [
   updateFaq,
   deleteFaq,
   findFaq,
+  listFaqs,
   findKnowledgeDoc,
   setSystemPrompt,
   deleteKnowledgeDoc,
