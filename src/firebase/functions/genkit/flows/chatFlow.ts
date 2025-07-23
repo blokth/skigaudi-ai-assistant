@@ -20,11 +20,8 @@ export const chatFlow = ai.defineFlow(
 		outputSchema: z.string(),
 	},
 	async ({ messages }, { context, sendChunk }) => {
-		const query =
-			messages
-				.reverse()
-				.find(({ role }) => role === "user")
-				?.content.at(0)?.text ?? "";
+		const lastUser = [...messages].reverse().find((m) => m.role === "user");
+		const query = lastUser?.content[0]?.text ?? "";
 
 		const [[faqs, knowledge], [resources, tools]] = await Promise.all([
 			Promise.all([
