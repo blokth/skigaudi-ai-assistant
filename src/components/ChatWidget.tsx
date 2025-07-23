@@ -23,6 +23,7 @@ type ChatMsg = {
   author: "user" | "ai";
   text?: string;              // normal text message
   attachmentName?: string;    // when an uploaded file should be shown
+  loading?: boolean;          // marks interim “thinking” entry
 };
 
 // small helper to append a message
@@ -95,6 +96,7 @@ export default function ChatWidget() {
       push({
         id: loadingId,
         author: "ai",
+        loading: true,
         text: LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)],
       });
 
@@ -137,7 +139,7 @@ export default function ChatWidget() {
         // replace placeholder with real answer
         setMsgs((prev) =>
           prev.map((m) =>
-            m.id === loadingId ? { ...m, text: data as string } : m,
+            m.id === loadingId ? { ...m, text: data as string, loading: false } : m,
           ),
         );
       } catch {
@@ -149,7 +151,7 @@ export default function ChatWidget() {
 
         setMsgs((prev) =>
           prev.map((m) =>
-            m.id === loadingId ? { ...m, text: "Something went wrong." } : m,
+            m.id === loadingId ? { ...m, text: "Something went wrong.", loading: false } : m,
           ),
         );
       } finally {
@@ -189,26 +191,35 @@ export default function ChatWidget() {
           <div className="flex flex-col h-full">
             {/* messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={cn(
-                    "max-w-[85%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap break-words",
-                    m.author === "user"
-                      ? "ml-auto bg-primary text-primary-foreground"
-                      : "mr-auto bg-secondary text-secondary-foreground",
-                  )}
-                >
-                  {m.attachmentName ? (
-                    <div className="inline-flex items-center gap-2">
-                      <Paperclip className="size-4 shrink-0" />
-                      <span className="break-all">{m.attachmentName}</span>
-                    </div>
-                  ) : (
-                    m.text
-                  )}
-                </div>
-              ))}
+              {messages.map((m) =>
+                m.loading ? (
+                  <div
+                    key={m.id}
+                    className="mx-auto text-xs italic text-muted-foreground"
+                  >
+                    {m.text}
+                  </div>
+                ) : (
+                  <div
+                    key={m.id}
+                    className={cn(
+                      "max-w-[85%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap break-words",
+                      m.author === "user"
+                        ? "ml-auto bg-primary text-primary-foreground"
+                        : "mr-auto bg-secondary text-secondary-foreground",
+                    )}
+                  >
+                    {m.attachmentName ? (
+                      <div className="inline-flex items-center gap-2">
+                        <Paperclip className="size-4 shrink-0" />
+                        <span className="break-all">{m.attachmentName}</span>
+                      </div>
+                    ) : (
+                      m.text
+                    )}
+                  </div>
+                ),
+              )}
               <div ref={messagesEndRef} />
             </div>
 
