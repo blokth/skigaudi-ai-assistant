@@ -52,7 +52,6 @@ export default function ChatWidget() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const placeholderShownRef = useRef(false);
 
   useEffect(() => {
     // clear any running interval when component unmounts
@@ -98,7 +97,6 @@ export default function ChatWidget() {
 
       // show placeholder after a short pause to mimic "thinking"
       loadingTimeoutRef.current = setTimeout(() => {
-        placeholderShownRef.current = true;
 
         push({
           id: loadingId,
@@ -151,23 +149,13 @@ export default function ChatWidget() {
           loadingIntervalRef.current = null;
         }
 
-        setMsgs((prev) => {
-          if (!placeholderShownRef.current) {
-            // placeholder never rendered -> just append real answer
-            return [
-              ...prev,
-              { id: loadingId, author: "ai", text: data as string },
-            ];
-          }
-          // placeholder exists -> replace it
-          return prev.map((m) =>
-            m.id === loadingId
-              ? { ...m, text: data as string, loading: false }
-              : m,
-          );
-        });
-
-        placeholderShownRef.current = false; // reset flag
+        const aiText = data as string;
+        setMsgs((prev) => [
+          // remove any loading placeholder (if present)
+          ...prev.filter((m) => m.id !== loadingId),
+          // append final answer with a fresh id
+          { id: crypto.randomUUID(), author: "ai", text: aiText },
+        ]);
       } catch {
         // clear the loading interval before replacing the placeholder
         if (loadingTimeoutRef.current) {
@@ -180,23 +168,10 @@ export default function ChatWidget() {
           loadingIntervalRef.current = null;
         }
 
-        setMsgs((prev) => {
-          if (!placeholderShownRef.current) {
-            // placeholder never rendered -> just append error answer
-            return [
-              ...prev,
-              { id: loadingId, author: "ai", text: "Something went wrong." },
-            ];
-          }
-          // placeholder exists -> replace it
-          return prev.map((m) =>
-            m.id === loadingId
-              ? { ...m, text: "Something went wrong.", loading: false }
-              : m,
-          );
-        });
-
-        placeholderShownRef.current = false; // reset flag
+        setMsgs((prev) => [
+          ...prev.filter((m) => m.id !== loadingId),
+          { id: crypto.randomUUID(), author: "ai", text: "Something went wrong." },
+        ]);
       } finally {
         setSending(false);
       }
