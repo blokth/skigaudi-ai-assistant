@@ -1,0 +1,20 @@
+---
+      prompt:
+      format: "json",
+      schema: z.array(
+        z.object({ question: z.string(), answer: z.string() }),
+      ),
+---
+model: vertexai/gemini-2.0-flash
+tools: [createFaq, findFaq, listFaqs, updateFaq, deleteFaq, bulkCreateFaq]
+input:
+  schema:
+    callerRole: string        # "ADMIN" | "NORMAL USER"
+    query: string
+---
+From the text below extract every QUESTION / ANSWER pair and return JSON that matches this schema:
+
+`[ { "question": string, "answer": string } ]
+
+TEXT:
+{{text}}
