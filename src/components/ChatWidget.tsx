@@ -49,6 +49,14 @@ export default function ChatWidget() {
   const { isAdmin } = useAuth();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    // clear any running interval when component unmounts
+    return () => {
+      if (loadingIntervalRef.current) clearInterval(loadingIntervalRef.current);
+    };
+  }, []);
 
   const handleAttachClick = () => {
     fileInputRef.current?.click();
@@ -90,6 +98,24 @@ export default function ChatWidget() {
         text: LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)],
       });
 
+      // cycle the loading message every 3 s
+      loadingIntervalRef.current = setInterval(() => {
+        setMsgs(prev =>
+          prev.map(m => {
+            if (m.id !== loadingId) return m;
+            const current = m.text;
+            let next = current;
+            while (next === current) {
+              next =
+                LOADING_MESSAGES[
+                  Math.floor(Math.random() * LOADING_MESSAGES.length)
+                ];
+            }
+            return { ...m, text: next };
+          }),
+        );
+      }, 3000);
+
       setSending(true);
       try {
         const call = httpsCallable(functions, "chat");
@@ -102,6 +128,12 @@ export default function ChatWidget() {
 
         const { data } = await call({ messages: history });
 
+        // clear the loading interval before replacing the placeholder
+        if (loadingIntervalRef.current) {
+          clearInterval(loadingIntervalRef.current);
+          loadingIntervalRef.current = null;
+        }
+
         // replace placeholder with real answer
         setMsgs((prev) =>
           prev.map((m) =>
@@ -109,6 +141,12 @@ export default function ChatWidget() {
           ),
         );
       } catch {
+        // clear the loading interval before replacing the placeholder
+        if (loadingIntervalRef.current) {
+          clearInterval(loadingIntervalRef.current);
+          loadingIntervalRef.current = null;
+        }
+
         setMsgs((prev) =>
           prev.map((m) =>
             m.id === loadingId ? { ...m, text: "Something went wrong." } : m,
