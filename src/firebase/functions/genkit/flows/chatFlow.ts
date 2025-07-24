@@ -34,7 +34,7 @@ export const chatFlow = ai.defineFlow(
     const admin = isAdmin(context);
 
     const { stream, response } = systemPrompt.stream(
-      { query, role: admin ? "ADMIN" : "NORMAL USER" },
+      { query, callerRole: admin ? "ADMIN" : "NORMAL USER" },
       {
         resources,
         docs: [...faqs, ...knowledge],
