@@ -22,12 +22,22 @@ export default function MessageList({ msgs }: { msgs: ChatMsg[] }) {
           )}
         >
           {m.attachmentName ? (
+            /* attachment bubble stays unchanged */
             <div className="inline-flex items-center gap-2">
               <Paperclip className="size-4 shrink-0" />
               <span className="break-all">{m.attachmentName}</span>
             </div>
           ) : (
-            m.text
+            <>
+              {m.text}
+              {m.loading && (
+                <span className="inline-flex ml-1">
+                  <span className="animate-bounce" style={{ animationDelay: "0s" }}>.</span>
+                  <span className="animate-bounce" style={{ animationDelay: "0.2s" }}>.</span>
+                  <span className="animate-bounce" style={{ animationDelay: "0.4s" }}>.</span>
+                </span>
+              )}
+            </>
           )}
         </div>
       ))}
