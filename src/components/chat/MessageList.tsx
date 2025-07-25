@@ -1,8 +1,17 @@
 "use client";
 import { Paperclip } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChatMsg } from "./types";
+
+function Dots() {
+  const [phase, setPhase] = useState(0);           // 0,1,2
+  useEffect(() => {
+    const id = setInterval(() => setPhase((p) => (p + 1) % 3), 500);
+    return () => clearInterval(id);
+  }, []);
+  return <span className="ml-1">{".".repeat(phase + 1)}</span>;
+}
 
 export default function MessageList({ msgs }: { msgs: ChatMsg[] }) {
   const endRef = useRef<HTMLDivElement>(null);
@@ -30,13 +39,7 @@ export default function MessageList({ msgs }: { msgs: ChatMsg[] }) {
           ) : (
             <>
               {m.text}
-              {m.loading && (
-                <span className="inline-flex ml-1">
-                  <span className="animate-bounce" style={{ animationDelay: "0s" }}>.</span>
-                  <span className="animate-bounce" style={{ animationDelay: "0.2s" }}>.</span>
-                  <span className="animate-bounce" style={{ animationDelay: "0.4s" }}>.</span>
-                </span>
-              )}
+              {m.loading && <Dots />}
             </>
           )}
         </div>
