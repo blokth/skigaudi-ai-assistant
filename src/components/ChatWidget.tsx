@@ -138,24 +138,20 @@ export default function ChatWidget() {
 
         const { stream } = await call.stream({ messages: history });
 
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-          loadingTimeoutRef.current = null;
-        }
+        if (loadingTimeoutRef.current) { clearTimeout(loadingTimeoutRef.current); loadingTimeoutRef.current = null; }
+        if (loadingIntervalRef.current) { clearInterval(loadingIntervalRef.current); loadingIntervalRef.current = null; }
 
-        // clear the loading interval before replacing the placeholder
-        if (loadingIntervalRef.current) {
-          clearInterval(loadingIntervalRef.current);
-          loadingIntervalRef.current = null;
-        }
+        // create empty AI bubble that we will extend chunk-by-chunk
+        const aiMsgId = crypto.randomUUID();
+        push({ id: aiMsgId, author: "ai", text: "" });
 
-        const aiText = data as string;
-        setMsgs((prev) => [
-          // remove any loading placeholder (if present)
-          ...prev.filter((m) => m.id !== loadingId),
-          // append final answer with a fresh id
-          { id: crypto.randomUUID(), author: "ai", text: aiText },
-        ]);
+        for await (const chunk of stream as AsyncIterable<{ text: string }>) {
+          setMsgs((prev) =>
+            prev.map((m) =>
+              m.id === aiMsgId ? { ...m, text: (m.text ?? "") + chunk.text } : m,
+            ),
+          );
+        }
       } catch {
         // clear the loading interval before replacing the placeholder
         if (loadingTimeoutRef.current) {
