@@ -48,10 +48,10 @@ export default function ChatWidget() {
         push({ id: aiMsgId, author: "ai", text: loadingText });   // visible right away
 
         // 2 – obtain the AsyncIterable produced by the callable
-        const stream = (await call.stream({ messages: history })) as AsyncIterable<string>;
+        const { stream } = (await call.stream({ messages: history }));
 
         let response = "";
-        for await (const chunk of stream) {
+        for await (const chunk of stream as AsyncIterable<string>) {
           response = response + chunk;
           setMsgs((prev) =>
             prev.map((m) =>
