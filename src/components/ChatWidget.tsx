@@ -14,6 +14,9 @@ export default function ChatWidget() {
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [sending, setSending] = useState(false);
 
+  const pathname = usePathname();   // was used inline before
+  const { isAdmin } = useAuth();    // move useAuth() out of JSX / conditionals
+
   const push = (m: ChatMsg) => setMsgs((p) => [...p, m]);
 
   const send = useCallback(
@@ -80,7 +83,7 @@ export default function ChatWidget() {
     }
   };
 
-  if (usePathname() === "/login") return null;
+  if (pathname === "/login") return null;
 
   return (
     <>
@@ -88,7 +91,7 @@ export default function ChatWidget() {
       {open && (
         <Panel
           msgs={msgs}
-          isAdmin={useAuth().isAdmin}
+          isAdmin={isAdmin}
           sending={sending}
           onSend={send}
           onFilePicked={handleFile}
