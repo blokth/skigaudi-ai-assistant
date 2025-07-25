@@ -41,12 +41,16 @@ export default function ChatWidget() {
             content: [{ text: m.text! }],
           }));
 
-        const { stream } = await call.stream({ messages: history });
-
+        // 1 – add the placeholder immediately
         const aiMsgId = crypto.randomUUID();
         const loadingText =
           LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
-        push({ id: aiMsgId, author: "ai", text: loadingText }); // shown until first chunk
+        push({ id: aiMsgId, author: "ai", text: loadingText });   // visible right away
+
+        // 2 – invoke the callable (note: no “.stream” method – just call the function)
+        const { stream } = (await call({ messages: history })) as {
+          stream: AsyncIterable<string>;
+        };
 
         let response = "";
         for await (const chunk of stream as AsyncIterable<string>) {
