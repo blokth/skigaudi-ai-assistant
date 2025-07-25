@@ -9,6 +9,13 @@ import { functions, storage } from "@/firebase/client";
 import { useAuth } from "@/context/AuthContext";
 import { ChatMsg } from "./chat/types";
 
+const LOADING_MESSAGES = [
+  "⛷️  Riding down the slope…",
+  "🚡  Taking the gondola up…",
+  "🏂  Carving fresh powder…",
+  "❄️  Checking the snow report…",
+];
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
@@ -37,7 +44,9 @@ export default function ChatWidget() {
         const { stream } = await call.stream({ messages: history });
 
         const aiMsgId = crypto.randomUUID();
-        push({ id: aiMsgId, author: "ai", text: "" });
+        const loadingText =
+          LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
+        push({ id: aiMsgId, author: "ai", text: loadingText }); // shown until first chunk
 
         let response = "";
         for await (const chunk of stream as AsyncIterable<string>) {
