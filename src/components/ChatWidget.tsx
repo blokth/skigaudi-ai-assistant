@@ -29,8 +29,8 @@ type ChatMsg = {
 // small helper to append a message
 const append =
   (set: React.Dispatch<React.SetStateAction<ChatMsg[]>>) =>
-  (msg: ChatMsg) =>
-    set((prev) => [...prev, msg]);
+    (msg: ChatMsg) =>
+      set((prev) => [...prev, msg]);
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
@@ -57,7 +57,7 @@ export default function ChatWidget() {
     // clear any running interval when component unmounts
     return () => {
       if (loadingIntervalRef.current) clearInterval(loadingIntervalRef.current);
-      if (loadingTimeoutRef.current)  clearTimeout(loadingTimeoutRef.current);
+      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
     };
   }, []);
 
@@ -104,7 +104,7 @@ export default function ChatWidget() {
           loading: true,
           text:
             LOADING_MESSAGES[
-              Math.floor(Math.random() * LOADING_MESSAGES.length)
+            Math.floor(Math.random() * LOADING_MESSAGES.length)
             ],
         });
 
@@ -117,7 +117,7 @@ export default function ChatWidget() {
               while (next === m.text) {
                 next =
                   LOADING_MESSAGES[
-                    Math.floor(Math.random() * LOADING_MESSAGES.length)
+                  Math.floor(Math.random() * LOADING_MESSAGES.length)
                   ];
               }
               return { ...m, text: next };
@@ -136,7 +136,7 @@ export default function ChatWidget() {
             content: [{ text: m.text! }],
           }));
 
-        const { data } = await call({ messages: history });
+        const { stream } = await call.stream({ messages: history });
 
         if (loadingTimeoutRef.current) {
           clearTimeout(loadingTimeoutRef.current);
