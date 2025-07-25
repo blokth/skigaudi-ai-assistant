@@ -79,7 +79,6 @@ export default function ChatWidget() {
       setSending(true);
       try {
         const call = httpsCallable(functions, "chat");
-        const { stream } = call;                       // ← grab the stream factory
         const history = [...messages, { id: "", author: "user", text }]
           .filter((m) => m.text)
           .map((m) => ({
@@ -87,13 +86,12 @@ export default function ChatWidget() {
             content: [{ text: m.text! }],
           }));
 
-        const iterable = await stream({ messages: history });  // AsyncIterable<StreamData>
+        const { stream } = await call.stream({ messages: history });
 
-        // create empty AI bubble that we will extend chunk-by-chunk
         const aiMsgId = crypto.randomUUID();
         push({ id: aiMsgId, author: "ai", text: "" });
 
-        for await (const chunk of iterable as AsyncIterable<string>) {
+        for await (const chunk of stream as AsyncIterable<string>) {
           setMsgs((prev) =>
             prev.map((m) =>
               m.id === aiMsgId ? { ...m, text: (m.text ?? "") + chunk } : m,
@@ -101,9 +99,11 @@ export default function ChatWidget() {
           );
         }
       } catch {
-        push({ id: crypto.randomUUID(),
-               author: "ai",
-               text: "Something went wrong." });
+        push({
+          id: crypto.randomUUID(),
+          author: "ai",
+          text: "Something went wrong."
+        });
       } finally {
         setSending(false);
       }
