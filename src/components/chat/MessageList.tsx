@@ -18,6 +18,7 @@ export default function MessageList({ msgs }: { msgs: ChatMsg[] }) {
             m.author === "user"
               ? "ml-auto bg-primary text-primary-foreground"
               : "mr-auto bg-secondary text-secondary-foreground",
+            m.loading && "italic text-muted-foreground"
           )}
         >
           {m.attachmentName ? (

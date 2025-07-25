@@ -45,19 +45,24 @@ export default function ChatWidget() {
         const aiMsgId = crypto.randomUUID();
         const loadingText =
           LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
-        push({ id: aiMsgId, author: "ai", text: loadingText });   // visible right away
+        push({ id: aiMsgId, author: "ai", text: loadingText, loading: true });   // visible right away
 
         // 2 – obtain the AsyncIterable produced by the callable
         const { stream } = (await call.stream({ messages: history }));
 
         let response = "";
+        let gotFirst = false;
+
         for await (const chunk of stream as AsyncIterable<string>) {
-          response = response + chunk;
+          response += chunk;
           setMsgs((prev) =>
             prev.map((m) =>
-              m.id === aiMsgId ? { ...m, text: response } : m,
+              m.id === aiMsgId
+                ? { ...m, text: response, loading: gotFirst ? false : undefined }
+                : m,
             ),
           );
+          gotFirst = true;
         }
       } catch {
         push({

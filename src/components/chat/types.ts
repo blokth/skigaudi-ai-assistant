@@ -3,4 +3,5 @@ export type ChatMsg = {
   author: "user" | "ai";
   text?: string;
   attachmentName?: string;
+  loading?: boolean;   // true while the AI response is still generating
 };
