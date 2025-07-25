@@ -14,8 +14,8 @@ export default function ChatWidget() {
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [sending, setSending] = useState(false);
 
-  const pathname = usePathname();   // was used inline before
-  const { isAdmin } = useAuth();    // move useAuth() out of JSX / conditionals
+  const pathname = usePathname();
+  const { isAdmin } = useAuth();
 
   const push = (m: ChatMsg) => setMsgs((p) => [...p, m]);
 
