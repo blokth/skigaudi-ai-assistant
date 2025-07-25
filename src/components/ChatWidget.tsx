@@ -34,15 +34,17 @@ export default function ChatWidget() {
             content: [{ text: m.text! }],
           }));
 
-        const result = await call.stream({ messages: history }); // result ⬅ AsyncIterable
+        const { stream } = await call.stream({ messages: history });
 
         const aiMsgId = crypto.randomUUID();
         push({ id: aiMsgId, author: "ai", text: "" });
 
-        for await (const chunk of result as AsyncIterable<string>) {
+        let response = "";
+        for await (const chunk of stream as AsyncIterable<string>) {
+          response = response + chunk;
           setMsgs((prev) =>
             prev.map((m) =>
-              m.id === aiMsgId ? { ...m, text: (m.text ?? "") + chunk } : m,
+              m.id === aiMsgId ? { ...m, text: response } : m,
             ),
           );
         }
