@@ -10,13 +10,6 @@ import { useAuth } from "@/context/AuthContext";
 import { functions, storage } from "@/firebase/client";
 import { cn } from "@/lib/utils";
 
-const LOADING_MESSAGES = [
-  "Waxing the skis…",
-  "Riding the chairlift…",
-  "Carving down the slope…",
-  "Gathering all the documents…",
-  "Checking avalanche report…",
-];
 
 type ChatMsg = {
   id: string;
@@ -50,16 +43,6 @@ export default function ChatWidget() {
   const { isAdmin } = useAuth();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    // clear any running interval when component unmounts
-    return () => {
-      if (loadingIntervalRef.current) clearInterval(loadingIntervalRef.current);
-      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-    };
-  }, []);
 
   const handleAttachClick = () => {
     fileInputRef.current?.click();
@@ -93,39 +76,6 @@ export default function ChatWidget() {
       // user message
       push({ id: crypto.randomUUID(), author: "user", text });
 
-      const loadingId = crypto.randomUUID();
-
-      // show placeholder after a short pause to mimic "thinking"
-      loadingTimeoutRef.current = setTimeout(() => {
-
-        push({
-          id: loadingId,
-          author: "ai",
-          loading: true,
-          text:
-            LOADING_MESSAGES[
-            Math.floor(Math.random() * LOADING_MESSAGES.length)
-            ],
-        });
-
-        // rotate the loading text every 3 s
-        loadingIntervalRef.current = setInterval(() => {
-          setMsgs((prev) =>
-            prev.map((m) => {
-              if (m.id !== loadingId) return m;
-              let next = m.text;
-              while (next === m.text) {
-                next =
-                  LOADING_MESSAGES[
-                  Math.floor(Math.random() * LOADING_MESSAGES.length)
-                  ];
-              }
-              return { ...m, text: next };
-            }),
-          );
-        }, 3000);
-      }, 300); // 300 ms delay
-
       setSending(true);
       try {
         const call = httpsCallable(functions, "chat");
@@ -137,9 +87,6 @@ export default function ChatWidget() {
           }));
 
         const { stream } = await call.stream({ messages: history });
-
-        if (loadingTimeoutRef.current) { clearTimeout(loadingTimeoutRef.current); loadingTimeoutRef.current = null; }
-        if (loadingIntervalRef.current) { clearInterval(loadingIntervalRef.current); loadingIntervalRef.current = null; }
 
         // create empty AI bubble that we will extend chunk-by-chunk
         const aiMsgId = crypto.randomUUID();
@@ -153,21 +100,9 @@ export default function ChatWidget() {
           );
         }
       } catch {
-        // clear the loading interval before replacing the placeholder
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-          loadingTimeoutRef.current = null;
-        }
-
-        if (loadingIntervalRef.current) {
-          clearInterval(loadingIntervalRef.current);
-          loadingIntervalRef.current = null;
-        }
-
-        setMsgs((prev) => [
-          ...prev.filter((m) => m.id !== loadingId),
-          { id: crypto.randomUUID(), author: "ai", text: "Something went wrong." },
-        ]);
+        push({ id: crypto.randomUUID(),
+               author: "ai",
+               text: "Something went wrong." });
       } finally {
         setSending(false);
       }
