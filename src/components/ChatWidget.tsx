@@ -10,10 +10,10 @@ import { useAuth } from "@/context/AuthContext";
 import { ChatMsg } from "./chat/types";
 
 const LOADING_MESSAGES = [
-  "⛷️  Riding down the slope…",
-  "🚡  Taking the gondola up…",
-  "🏂  Carving fresh powder…",
-  "❄️  Checking the snow report…",
+  "⛷️  Riding down the slope",
+  "🚡  Taking the gondola up",
+  "🏂  Carving fresh powder",
+  "❄️  Checking the snow report",
 ];
 
 export default function ChatWidget() {

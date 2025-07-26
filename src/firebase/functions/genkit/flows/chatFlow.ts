@@ -1,4 +1,4 @@
-import { z } from "genkit";
+import { GenerateResponseChunk, z } from "genkit";
 import { isAdmin } from "../auth";
 import { ai } from "../core";
 import { getExternalResources, getExternalTools } from "../mcp";
@@ -18,6 +18,7 @@ export const chatFlow = ai.defineFlow(
       ),
     }),
     outputSchema: z.string(),
+    streamSchema: z.string()
   },
   async ({ messages }, { context, sendChunk }) => {
     const lastUser = [...messages].reverse().find((m) => m.role === "user");
